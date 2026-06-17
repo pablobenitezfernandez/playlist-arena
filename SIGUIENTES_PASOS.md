@@ -42,9 +42,15 @@ Ya se ha ejecutado `npm install` y existe `package-lock.json`.
 
 Para ejecutar la app localmente:
 
-1. arrancar el proyecto con `npm run dev -- -H 127.0.0.1`
-2. abrir `http://127.0.0.1:3000`
+1. hacer doble clic en `Abrir Playlist Arena.bat`
+2. mantener abierta la ventana del lanzador mientras uses la app
 3. probar login, sync, filtros y torneo
+
+Alternativa manual:
+
+```bash
+npm run dev -- -H 127.0.0.1
+```
 
 ## 3. Validaciones pendientes
 

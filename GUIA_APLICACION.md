@@ -268,10 +268,13 @@ La app guarda en `localStorage`:
 
 ## Flujo recomendado de uso
 
-1. Entra en `Actualizar datos`
-2. Conecta Spotify
-3. Actualiza la playlist
-4. Revisa `Canciones de la ultima actualizacion`
-5. Usa `Anadir puntuacion` para las nuevas
-6. Consulta `Ranking`
-7. Juega un `Torneo` cuando quieras
+1. Abre `Abrir Playlist Arena.bat`
+2. Entra en `Actualizar datos`
+3. Conecta Spotify
+4. Actualiza la playlist
+5. Revisa `Canciones de la ultima actualizacion`
+6. Usa `Anadir puntuacion` para las nuevas
+7. Consulta `Ranking`
+8. Juega un `Torneo` cuando quieras
+
+Para cerrar la app local, vuelve a la ventana del lanzador y pulsa `Ctrl+C`.

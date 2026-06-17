@@ -50,6 +50,15 @@ Estado general:
 - `app/callback/page.tsx`
   - monta la ruta del callback de Spotify
 
+### Lanzador local
+
+- `Abrir Playlist Arena.bat`
+  - arranca la app en Windows con doble clic
+  - anade temporalmente `C:\Program Files\nodejs` al `PATH`
+  - instala dependencias si falta `node_modules`
+  - abre `http://127.0.0.1:3000`
+  - mantiene el servidor vivo hasta cerrar con `Ctrl+C`
+
 ### Componentes principales
 
 - `components/playlist-arena-app.tsx`
@@ -243,6 +252,7 @@ Cambios principales presentes en el codigo:
 - adaptacion a Spotify 2026: `127.0.0.1` como redirect, endpoint `/items`, y retirada de popularidad
 - migracion de torneos antiguos que usaban estrategias por popularidad hacia `Aleatorio`
 - migracion de `next lint` a ESLint CLI con `eslint.config.mjs`
+- lanzador Windows `Abrir Playlist Arena.bat`
 - build validado correctamente con Next 15
 - documentacion funcional y de uso actualizada
 

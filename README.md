@@ -178,4 +178,12 @@ En este ordenador ya se ha instalado Node.js, se han instalado dependencias con 
 http://127.0.0.1:3000
 ```
 
+Tambien existe un lanzador para Windows:
+
+```bash
+Abrir Playlist Arena.bat
+```
+
+Con doble clic arranca el servidor local y abre la app en el navegador. Mantener esa ventana abierta mientras se use la app; para cerrarla, volver a la ventana y pulsar `Ctrl+C`.
+
 La sincronizacion usa el endpoint actual de Spotify `/playlists/{playlist_id}/items`, compatible con los cambios de Spotify 2026. En modo desarrollo, Spotify exige que la cuenta que use la app este anadida en User Management y que la playlist sea de esa cuenta o accesible como colaborador.
