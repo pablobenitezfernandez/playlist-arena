@@ -1,0 +1,212 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import type { PlaylistSong } from "@/lib/types";
+import { formatDate, formatDuration, formatRating } from "@/lib/utils";
+
+type SongLibraryItemProps = {
+  song: PlaylistSong;
+  expanded: boolean;
+  onToggle: () => void;
+  onSaveRating: (entryId: string, rating: number) => void;
+  onClearRating: (entryId: string) => void;
+  onDeleteArchived?: (entryId: string) => void;
+};
+
+function normalizeRating(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
+    return null;
+  }
+
+  return Math.round(parsed * 10) / 10;
+}
+
+export function SongLibraryItem({
+  song,
+  expanded,
+  onToggle,
+  onSaveRating,
+  onClearRating,
+  onDeleteArchived
+}: SongLibraryItemProps) {
+  const [draftRating, setDraftRating] = useState(
+    song.userRating === null ? "" : song.userRating.toFixed(1)
+  );
+
+  useEffect(() => {
+    setDraftRating(song.userRating === null ? "" : song.userRating.toFixed(1));
+  }, [song.entryId, song.userRating]);
+
+  const parsedRating = normalizeRating(draftRating);
+  const canSave = parsedRating !== null;
+
+  return (
+    <article
+      className={`glass-panel overflow-hidden rounded-[28px] ${
+        song.userRating === null ? "bg-white/[0.035]" : ""
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-4 px-4 py-4 text-left transition hover:bg-white/5"
+      >
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[20px] bg-white/5">
+          {song.coverUrl ? (
+            <Image
+              src={song.coverUrl}
+              alt={`${song.title} cover`}
+              fill
+              sizes="80px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-white/40">
+              Sin portada
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="truncate text-lg font-semibold text-white">{song.title}</h3>
+                {!song.isInActivePlaylist ? (
+                  <span className="rounded-full border border-amber-400/30 bg-amber-300/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-amber-200">
+                    Fuera de playlist
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 truncate text-sm text-white/68">{song.artists.join(", ")}</p>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                song.userRating === null
+                  ? "border border-white/10 bg-white/5 text-white/50"
+                  : "border border-glow/35 bg-glow/10 text-glowSoft"
+              }`}
+            >
+              {song.userRating === null ? "Sin puntuacion" : `Nota ${formatRating(song.userRating)}`}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/48">
+            <span>{song.album}</span>
+            <span>{song.releaseYear}</span>
+            <span>{formatDuration(song.durationMs)}</span>
+            <span>{song.tournamentWins} victorias</span>
+          </div>
+        </div>
+
+        <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-white/42">
+          {expanded ? "Cerrar" : "Abrir"}
+        </span>
+      </button>
+
+      {expanded ? (
+        <div className="border-t border-white/8 px-4 py-5">
+          <div className="grid gap-4 text-sm text-white/72 sm:grid-cols-2 xl:grid-cols-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Album</p>
+              <p className="mt-1">{song.album}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Artistas</p>
+              <p className="mt-1">{song.artists.join(", ")}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Anadida</p>
+              <p className="mt-1">{formatDate(song.addedAt)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Lanzamiento</p>
+              <p className="mt-1">{song.releaseDate || song.releaseYear}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Duracion</p>
+              <p className="mt-1">{formatDuration(song.durationMs)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Victorias</p>
+              <p className="mt-1">{song.tournamentWins}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Estado</p>
+              <p className="mt-1">
+                {song.isInActivePlaylist ? "Sigue en la playlist" : "Ya no esta en la playlist"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-end gap-3">
+            <label className="min-w-[190px] flex-1">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white/38">
+                Puntuacion personal
+              </span>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                value={draftRating}
+                onChange={(event) => setDraftRating(event.target.value)}
+                placeholder="0.0 - 10.0"
+                className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (parsedRating !== null) {
+                  onSaveRating(song.entryId, parsedRating);
+                }
+              }}
+              disabled={!canSave}
+              className="rounded-full bg-glow px-5 py-3 text-sm font-semibold text-ink transition hover:bg-glowSoft disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Guardar nota
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onClearRating(song.entryId)}
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+            >
+              Quitar nota
+            </button>
+
+            {song.spotifyUrl ? (
+              <a
+                href={song.spotifyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+              >
+                Abrir en Spotify
+              </a>
+            ) : null}
+
+            {!song.isInActivePlaylist && onDeleteArchived ? (
+              <button
+                type="button"
+                onClick={() => onDeleteArchived(song.entryId)}
+                className="rounded-full border border-rose/30 bg-rose/10 px-5 py-3 text-sm font-semibold text-rose transition hover:bg-rose/15"
+              >
+                Eliminar de la app
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
