@@ -253,6 +253,7 @@ Cambios principales presentes en el codigo:
 - migracion de torneos antiguos que usaban estrategias por popularidad hacia `Aleatorio`
 - migracion de `next lint` a ESLint CLI con `eslint.config.mjs`
 - lanzador Windows `Abrir Playlist Arena.bat`
+- exportacion JSON de datos locales y confirmacion escribiendo `BORRAR` antes de limpiar
 - build validado correctamente con Next 15
 - documentacion funcional y de uso actualizada
 

@@ -120,6 +120,8 @@ Se guarda de forma permanente en `localStorage`:
 - historial de actualizaciones
 - historial de torneos completados
 
+Desde `Actualizar datos` > `Datos locales` puedes exportar una copia JSON de la informacion guardada. Para limpiar los datos locales, la app pide confirmacion escribiendo `BORRAR`.
+
 ## Datos guardados por cancion
 
 Cada cancion local conserva:

@@ -210,6 +210,8 @@ export function PlaylistArenaApp() {
   );
   const [notice, setNotice] = useState<Notice | null>(null);
   const [errorDialog, setErrorDialog] = useState<ErrorDialog | null>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearConfirmationText, setClearConfirmationText] = useState("");
 
   useEffect(() => {
     const storedAuth = authStorage.read();
@@ -642,6 +644,42 @@ export function PlaylistArenaApp() {
     });
   }
 
+  function handleExportLocalData() {
+    const exportedAt = new Date().toISOString();
+    const payload = {
+      exportedAt,
+      app: "Playlist Arena",
+      version: 1,
+      playlist,
+      tournament,
+      tournamentArchive,
+      syncHistory
+    };
+    const fileDate = exportedAt.slice(0, 10);
+    const playlistName = playlist?.name
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const filename = `playlist-arena-${playlistName || "backup"}-${fileDate}.json`;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    setNotice({
+      tone: "success",
+      message: "Se ha exportado una copia JSON de tus datos locales."
+    });
+  }
+
   function handleClearImportedData() {
     persistPlaylist(null);
     persistTournament(null);
@@ -652,6 +690,8 @@ export function PlaylistArenaApp() {
     setSongsSection("search");
     setExpandedSongId(null);
     setRatingFlowOpen(false);
+    setClearDialogOpen(false);
+    setClearConfirmationText("");
     resetSongFilters();
     setNotice({
       tone: "info",
@@ -1729,13 +1769,25 @@ export function PlaylistArenaApp() {
                     <h2 className="mt-3 text-2xl font-semibold text-white">Estado</h2>
                   </div>
                   {playlist ? (
-                    <button
-                      type="button"
-                      onClick={handleClearImportedData}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white/70 transition hover:border-white/20 hover:bg-white/10"
-                    >
-                      Limpiar
-                    </button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={handleExportLocalData}
+                        className="rounded-full border border-glow/30 bg-glow/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-glowSoft transition hover:border-glow/45 hover:bg-glow/15"
+                      >
+                        Exportar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClearConfirmationText("");
+                          setClearDialogOpen(true);
+                        }}
+                        className="rounded-full border border-rose/40 bg-rose/12 px-4 py-2 text-xs uppercase tracking-[0.2em] text-rose transition hover:border-rose/60 hover:bg-rose/18"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
                   ) : null}
                 </div>
 
@@ -1873,6 +1925,53 @@ export function PlaylistArenaApp() {
           </section>
         ) : null}
       </div>
+
+      {clearDialogOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
+          <div className="glass-panel max-w-lg rounded-[30px] p-6 sm:p-8">
+            <p className="section-title text-[11px] text-rose">Borrado local</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Confirmar limpieza</h2>
+            <p className="mt-4 text-sm leading-6 text-white/72">
+              Esto borrara de este navegador la playlist importada, notas, torneo actual,
+              historial de actualizaciones e historial de torneos. Antes de limpiar, puedes usar
+              `Exportar` para guardar una copia JSON.
+            </p>
+
+            <label className="mt-5 block space-y-2">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white/38">
+                Escribe BORRAR para confirmar
+              </span>
+              <input
+                type="text"
+                value={clearConfirmationText}
+                onChange={(event) => setClearConfirmationText(event.target.value)}
+                className="w-full rounded-[18px] border border-rose/25 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-rose/50 focus:ring-2 focus:ring-rose/20"
+              />
+            </label>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setClearDialogOpen(false);
+                  setClearConfirmationText("");
+                }}
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleClearImportedData}
+                disabled={clearConfirmationText !== "BORRAR"}
+                className="rounded-full border border-rose/40 bg-rose/15 px-5 py-3 text-sm font-semibold text-rose transition hover:border-rose/60 hover:bg-rose/20 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                Borrar datos
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {errorDialog ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">

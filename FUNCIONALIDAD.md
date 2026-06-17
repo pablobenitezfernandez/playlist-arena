@@ -214,6 +214,8 @@ La app guarda en `localStorage`:
 - historial de actualizaciones
 - historial de torneos completados
 
+Desde `Datos locales` se puede exportar una copia JSON con la playlist, notas, torneo actual, historial de actualizaciones e historial de torneos. La limpieza local exige confirmacion escribiendo `BORRAR`.
+
 ## Estado actual del documento
 
 Este documento describe el comportamiento funcional implementado ahora mismo y deja preparada la base para ampliar despues exportaciones, rankings mas avanzados u otras vistas adicionales.

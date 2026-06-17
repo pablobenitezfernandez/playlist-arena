@@ -266,6 +266,8 @@ La app guarda en `localStorage`:
 - progreso del torneo
 - historial de actualizaciones
 
+Desde `Actualizar datos` > `Datos locales` puedes exportar una copia JSON de la informacion guardada. Para limpiar los datos locales, la app pide confirmacion escribiendo `BORRAR`.
+
 ## Flujo recomendado de uso
 
 1. Abre `Abrir Playlist Arena.bat`
