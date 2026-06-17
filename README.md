@@ -184,6 +184,12 @@ Tambien existe un lanzador para Windows:
 Abrir Playlist Arena.bat
 ```
 
-Con doble clic arranca el servidor local y abre la app en el navegador. Mantener esa ventana abierta mientras se use la app; para cerrarla, volver a la ventana y pulsar `Ctrl+C`.
+Con doble clic arranca el servidor local en `http://127.0.0.1:3000` y abre la app en el navegador. Mantener esa ventana abierta mientras se use la app; para cerrarla, volver a la ventana y pulsar `Ctrl+C`.
+
+El puerto `3000` es importante porque debe coincidir con el Redirect URI registrado en Spotify:
+
+```bash
+http://127.0.0.1:3000/callback
+```
 
 La sincronizacion usa el endpoint actual de Spotify `/playlists/{playlist_id}/items`, compatible con los cambios de Spotify 2026. En modo desarrollo, Spotify exige que la cuenta que use la app este anadida en User Management y que la playlist sea de esa cuenta o accesible como colaborador.

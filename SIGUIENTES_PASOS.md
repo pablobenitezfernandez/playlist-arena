@@ -52,6 +52,12 @@ Alternativa manual:
 npm run dev -- -H 127.0.0.1
 ```
 
+Si se arranca manualmente, conviene fijar tambien el puerto para que coincida con Spotify:
+
+```bash
+npm run dev -- -H 127.0.0.1 -p 3000
+```
+
 ## 3. Validaciones pendientes
 
 Validaciones hechas:

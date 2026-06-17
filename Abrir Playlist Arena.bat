@@ -38,6 +38,6 @@ echo.
 
 start "" powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Seconds 5; Start-Process 'http://127.0.0.1:3000'"
 
-call npm run dev -- -H 127.0.0.1
+call npm run dev -- -H 127.0.0.1 -p 3000
 
 endlocal
