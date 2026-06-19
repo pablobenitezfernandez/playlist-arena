@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   tournamentArchiveStorage,
   syncHistoryStorage,
@@ -185,9 +186,9 @@ export function Dashboard() {
         </p>
         <p style={{ color: "rgba(242,255,247,0.5)" }} className="text-sm">
           Entra en{" "}
-          <a href="/" className="underline" style={{ color: "#1ed760" }}>
+          <Link href="/" className="underline" style={{ color: "#1ed760" }}>
             Playlist Arena
-          </a>{" "}
+          </Link>{" "}
           para ver el dashboard.
         </p>
       </div>
@@ -206,9 +207,9 @@ export function Dashboard() {
         </p>
         <p style={{ color: "rgba(242,255,247,0.5)" }} className="text-sm">
           El dueño todavía no ha sincronizado la playlist. Vuelve a{" "}
-          <a href="/" className="underline" style={{ color: "#1ed760" }}>
+          <Link href="/" className="underline" style={{ color: "#1ed760" }}>
             Playlist Arena
-          </a>{" "}
+          </Link>{" "}
           en un rato.
         </p>
       </div>
@@ -779,13 +780,13 @@ export function Dashboard() {
 
       {/* Footer nav */}
       <div className="text-center pb-6">
-        <a
+        <Link
           href="/"
           className="text-sm underline"
           style={{ color: "rgba(30,215,96,0.7)" }}
         >
           ← Volver a Playlist Arena
-        </a>
+        </Link>
       </div>
     </div>
   );

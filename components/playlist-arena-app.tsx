@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SongCard } from "@/components/song-card";
 import { SongLibraryItem } from "@/components/song-library-item";
@@ -1210,7 +1211,7 @@ export function PlaylistArenaApp() {
             </div>
 
             <div className="flex">
-              <a
+              <Link
                 href="/dashboard"
                 className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition"
                 style={{
@@ -1220,7 +1221,7 @@ export function PlaylistArenaApp() {
                 }}
               >
                 <span>📊</span> Ver Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </section>
