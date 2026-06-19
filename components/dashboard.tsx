@@ -2,17 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  tournamentArchiveStorage,
-  syncHistoryStorage,
-  tournamentStorage
-} from "@/lib/storage";
+import { tournamentArchiveStorage, tournamentStorage } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
 import { fetchSharedPlaylist } from "@/lib/db";
 import type {
   ImportedPlaylist,
   TournamentArchiveEntry,
-  SyncHistoryEntry,
   TournamentState,
   PlaylistSong
 } from "@/lib/types";
@@ -134,7 +129,6 @@ export function Dashboard() {
   const userId = user?.id ?? null;
   const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
   const [archive, setArchive] = useState<TournamentArchiveEntry[]>([]);
-  const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [activeTournament, setActiveTournament] = useState<TournamentState | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -147,7 +141,6 @@ export function Dashboard() {
 
     // Torneo e historial siguen siendo locales por persona.
     setArchive(tournamentArchiveStorage.read());
-    setSyncHistory(syncHistoryStorage.read());
     setActiveTournament(tournamentStorage.read());
 
     // La playlist y las notas (personal + media) vienen de la base de datos.
@@ -287,17 +280,6 @@ export function Dashboard() {
   const topChampions = Object.values(champCount)
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
-
-  // Years distribution
-  const yearBuckets: Record<string, number> = {};
-  for (const s of songs) {
-    const y = s.releaseYear ?? "?";
-    yearBuckets[y] = (yearBuckets[y] ?? 0) + 1;
-  }
-  const sortedYears = Object.entries(yearBuckets).sort((a, b) =>
-    a[0].localeCompare(b[0])
-  );
-  const maxYear = Math.max(...Object.values(yearBuckets));
 
   // Active tournament progress
   let activePct = 0;
@@ -700,83 +682,6 @@ export function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* ── Años de lanzamiento ── */}
-      <div className="glass-panel rounded-xl p-5">
-        <SectionTitle>Canciones por año de lanzamiento</SectionTitle>
-        <div className="flex items-end gap-1 h-24 overflow-x-auto pb-1">
-          {sortedYears.map(([year, count]) => {
-            const pct = maxYear > 0 ? (count / maxYear) * 100 : 0;
-            return (
-              <div
-                key={year}
-                className="flex flex-col items-center gap-1 shrink-0"
-                style={{ minWidth: 24 }}
-                title={`${year}: ${count}`}
-              >
-                <div
-                  className="w-4 rounded-t"
-                  style={{
-                    height: `${Math.max(4, (pct / 100) * 72)}px`,
-                    background: "rgba(30,215,96,0.55)"
-                  }}
-                />
-                <span
-                  className="text-[9px] rotate-[-60deg] origin-top-left translate-y-3"
-                  style={{ color: "rgba(242,255,247,0.35)" }}
-                >
-                  {year.slice(2)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Sync history ── */}
-      <div className="glass-panel rounded-xl p-5">
-        <SectionTitle>Historial de sincronizaciones</SectionTitle>
-        {syncHistory.length === 0 ? (
-          <p className="text-sm" style={{ color: "rgba(242,255,247,0.4)" }}>
-            Sin sincronizaciones registradas.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {syncHistory
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(b.syncedAt).getTime() - new Date(a.syncedAt).getTime()
-              )
-              .map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex items-center justify-between text-sm"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: 8 }}
-                >
-                  <span style={{ color: "rgba(242,255,247,0.5)" }}>
-                    {fmtDate(entry.syncedAt)}
-                  </span>
-                  <span style={{ color: "#1ed760" }}>
-                    +{entry.addedSongs.length} canción
-                    {entry.addedSongs.length !== 1 ? "es" : ""}
-                  </span>
-                  {entry.replacedPlaylist && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{
-                        background: "rgba(255,163,72,0.15)",
-                        color: "#f2a65a"
-                      }}
-                    >
-                      reemplazó playlist
-                    </span>
-                  )}
-                </div>
-              ))}
-          </div>
-        )}
-      </div>
 
       {/* Footer nav */}
       <div className="text-center pb-6">
