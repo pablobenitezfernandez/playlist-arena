@@ -3,27 +3,13 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { PlaylistSong } from "@/lib/types";
-import { formatRating } from "@/lib/utils";
+import { formatRating, parseRatingInput, sanitizeRatingInput } from "@/lib/utils";
 
 type SongRatingFlowProps = {
   songs: PlaylistSong[];
   onSaveRating: (entryId: string, rating: number) => void;
   onClose: () => void;
 };
-
-function normalizeRating(value: string): number | null {
-  if (!value.trim()) {
-    return null;
-  }
-
-  const parsed = Number(value);
-
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
-    return null;
-  }
-
-  return Math.round(parsed * 10) / 10;
-}
 
 export function SongRatingFlow({
   songs,
@@ -38,7 +24,8 @@ export function SongRatingFlow({
     setDraftRating(currentSong?.userRating?.toFixed(1) ?? "");
   }, [currentSong?.entryId, currentSong?.userRating]);
 
-  const parsedRating = normalizeRating(draftRating);
+  const parsedRating = parseRatingInput(draftRating);
+  const showRatingHint = draftRating.trim() !== "" && parsedRating === null;
 
   if (!currentSong) {
     return (
@@ -98,15 +85,21 @@ export function SongRatingFlow({
           <label className="block max-w-xs">
             <span className="text-[11px] uppercase tracking-[0.2em] text-white/38">Nota</span>
             <input
-              type="number"
-              min="0"
-              max="10"
-              step="0.1"
+              type="text"
+              inputMode="decimal"
               value={draftRating}
-              onChange={(event) => setDraftRating(event.target.value)}
+              onChange={(event) => setDraftRating(sanitizeRatingInput(event.target.value))}
               placeholder="Ej. 8.7"
               className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
             />
+            <span className="mt-2 block text-[11px] text-white/40">
+              De 0 a 10, con un decimal como maximo (ej. 8.7).
+            </span>
+            {showRatingHint ? (
+              <span className="mt-1 block text-[11px] text-rose">
+                Nota no valida: usa 0-10 con un solo decimal.
+              </span>
+            ) : null}
           </label>
 
           <div className="flex flex-wrap gap-3">

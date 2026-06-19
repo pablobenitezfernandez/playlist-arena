@@ -3,7 +3,14 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { PlaylistSong } from "@/lib/types";
-import { formatDate, formatDuration, formatRating, formatReleaseDateFull } from "@/lib/utils";
+import {
+  formatDate,
+  formatDuration,
+  formatRating,
+  formatReleaseDateFull,
+  parseRatingInput,
+  sanitizeRatingInput
+} from "@/lib/utils";
 
 type SongLibraryItemProps = {
   song: PlaylistSong;
@@ -13,20 +20,6 @@ type SongLibraryItemProps = {
   onClearRating: (entryId: string) => void;
   onDeleteArchived?: (entryId: string) => void;
 };
-
-function normalizeRating(value: string): number | null {
-  if (!value.trim()) {
-    return null;
-  }
-
-  const parsed = Number(value);
-
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
-    return null;
-  }
-
-  return Math.round(parsed * 10) / 10;
-}
 
 export function SongLibraryItem({
   song,
@@ -44,8 +37,9 @@ export function SongLibraryItem({
     setDraftRating(song.userRating === null ? "" : song.userRating.toFixed(1));
   }, [song.entryId, song.userRating]);
 
-  const parsedRating = normalizeRating(draftRating);
+  const parsedRating = parseRatingInput(draftRating);
   const canSave = parsedRating !== null;
+  const showRatingHint = draftRating.trim() !== "" && parsedRating === null;
 
   return (
     <article
@@ -175,15 +169,18 @@ export function SongLibraryItem({
                 Puntuacion personal
               </span>
               <input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
                 value={draftRating}
-                onChange={(event) => setDraftRating(event.target.value)}
-                placeholder="0.0 - 10.0"
+                onChange={(event) => setDraftRating(sanitizeRatingInput(event.target.value))}
+                placeholder="0 a 10 (un decimal)"
                 className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
               />
+              {showRatingHint ? (
+                <span className="mt-1 block text-[11px] text-rose">
+                  Nota no valida: usa 0-10 con un solo decimal.
+                </span>
+              ) : null}
             </label>
 
             <button

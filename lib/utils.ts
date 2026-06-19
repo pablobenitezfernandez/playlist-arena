@@ -113,6 +113,37 @@ export function formatReleaseDateFull(releaseDate: string): string {
   return releaseDate.slice(0, 4);
 }
 
+/**
+ * Limpia lo que se escribe en el campo de nota mientras se teclea: solo dígitos
+ * y como máximo UN decimal. Así no se puede llegar a poner "9.23" (el segundo
+ * decimal se descarta al escribir). Admite estados intermedios como "9.".
+ */
+export function sanitizeRatingInput(value: string): string {
+  const normalized = value.replace(",", ".");
+  const match = normalized.match(/^\d{0,2}(\.\d?)?/);
+  return match ? match[0] : "";
+}
+
+/**
+ * Valida una nota escrita por el usuario: de 0 a 10 con UN decimal como máximo.
+ * Devuelve null si no es válida (p. ej. "9.23", vacío, fuera de rango).
+ */
+export function parseRatingInput(value: string): number | null {
+  const trimmed = value.trim().replace(",", ".");
+
+  if (!/^\d{1,2}(\.\d)?$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+
+  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
+    return null;
+  }
+
+  return Math.round(parsed * 10) / 10;
+}
+
 export function getReleaseYear(releaseDate: string): string {
   if (!releaseDate) {
     return "Desconocido";
