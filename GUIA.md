@@ -13,7 +13,7 @@ Guía para manejar el proyecto tú solo, sin depender de nadie.
 
 **Lo más importante de entender:**
 - La **web pública** (`https://playlist-arena.vercel.app`) y tu **app local** (`http://127.0.0.1:3000`) usan **la MISMA base de datos** (Supabase).
-- Por eso, cuando **sincronizas la playlist** desde tu local, las canciones nuevas aparecen **al instante en la web** para todos. **No hace falta "desplegar" ni tocar nada más.**
+- Por eso, cuando **sincronizas la playlist** (desde la web o el local, da igual), las canciones nuevas aparecen **al instante** para todos. **No hace falta "desplegar" ni tocar nada más.**
 - Solo necesitas "actualizar la app" (deploy) cuando se cambia el **código** (una función nueva, un arreglo). Eso normalmente lo hacemos juntos.
 
 ---
@@ -29,7 +29,7 @@ Guía para manejar el proyecto tú solo, sin depender de nadie.
 
 ## 3. Abrir la app en LOCAL (en tu ordenador)
 
-Solo necesitas el local para **2 cosas**: sincronizar tu playlist desde Spotify, o probar cambios antes de publicarlos.
+Ya casi no necesitas el local: puntuar y **sincronizar la playlist** se hacen desde la web. El local solo hace falta para **probar cambios de código antes de publicarlos** (algo que normalmente hacemos juntos).
 
 **Forma fácil:**
 1. Entra en la carpeta `torneo`.
@@ -55,11 +55,15 @@ Solo necesitas el local para **2 cosas**: sincronizar tu playlist desde Spotify,
 
 ## 5. Sincronizar la playlist (añadir/actualizar canciones)
 
-Esto **solo lo puedes hacer tú** (eres el dueño) y **desde el local**:
-1. Abre el local (paso 3) en **`http://127.0.0.1:3000`** (importante: `127.0.0.1`, no `localhost`).
-2. Inicia sesión con tu cuenta.
-3. Ve a **"Administrar playlist"** → **Conectar Spotify** → pega la URL de tu playlist → **Importar/Actualizar**.
-4. Listo: las canciones se guardan en la base de datos y **aparecen en la web para todos al momento**. No hay que hacer nada más.
+Esto **solo lo puedes hacer tú** (eres el dueño). Ya puedes hacerlo **directamente desde la web**, sin abrir el local:
+
+1. Entra en **https://playlist-arena.vercel.app** e inicia sesión con tu cuenta.
+2. Ve a **"Administrar playlist"** → **Conectar Spotify** → pega la URL de tu playlist → **Importar/Actualizar**.
+3. Listo: las canciones se guardan en la base de datos y **aparecen para todos al momento**. No hay que hacer nada más.
+
+> También puedes sincronizar desde el local (`http://127.0.0.1:3000`, ojo: `127.0.0.1`, no `localhost`) si lo prefieres. Da igual desde dónde lo hagas: la base de datos es la misma.
+>
+> Solo tu cuenta puede conectar Spotify (estás en *User Management* de la app de Spotify). Si en el futuro añades a otra persona como dueña, tendrás que añadir su cuenta de Spotify ahí.
 
 ---
 
@@ -86,8 +90,8 @@ Esto es cuando cambia el **código** (no los datos). Normalmente lo hacemos junt
 |---|---|
 | Puntuar canciones (tú o tus amigos) | ❌ No — se usa la web |
 | Ver el ranking / dashboard | ❌ No — la web |
-| **Sincronizar la playlist desde Spotify** | ✅ Sí — desde el local |
-| Probar un cambio antes de publicarlo | ✅ Sí — desde el local |
+| **Sincronizar la playlist desde Spotify** | ❌ No — ya se hace desde la web |
+| Probar un cambio de código antes de publicarlo | ✅ Sí — desde el local |
 
 ---
 
@@ -103,6 +107,6 @@ Esto es cuando cambia el **código** (no los datos). Normalmente lo hacemos junt
 ## Resumen de 30 segundos
 
 - **Usar la app** → web: `https://playlist-arena.vercel.app` (siempre encendida).
-- **Abrir local** → doble clic en `Abrir Playlist Arena.bat`. **Cerrar** → `Ctrl + C` en la ventana negra.
-- **Añadir canciones** → desde el local, "Administrar playlist". Aparece en la web al instante.
+- **Añadir canciones** → desde la web, "Administrar playlist" → Conectar Spotify. Aparece para todos al instante.
+- **Abrir local** (solo para probar cambios de código) → doble clic en `Abrir Playlist Arena.bat`. **Cerrar** → `Ctrl + C` en la ventana negra.
 - **Cambiar la app** → `git push` → Vercel redespliega solo.
