@@ -11,26 +11,59 @@ type SongRatingFlowProps = {
   onClose: () => void;
 };
 
+function pickRandomUnratedId(songs: PlaylistSong[]): string | null {
+  const pending = songs.filter((song) => song.userRating === null);
+
+  if (pending.length === 0) {
+    return null;
+  }
+
+  return pending[Math.floor(Math.random() * pending.length)].entryId;
+}
+
 export function SongRatingFlow({
   songs,
   onSaveRating,
   onClose
 }: SongRatingFlowProps) {
   const unratedSongs = songs.filter((song) => song.userRating === null);
-  const currentSong = unratedSongs[0];
+  // Empieza por una cancion sin puntuar AL AZAR (no sigue ningun orden).
+  const [currentId, setCurrentId] = useState<string | null>(() => pickRandomUnratedId(songs));
   const [draftRating, setDraftRating] = useState("");
 
+  // Cada vez que cambia la cancion actual, limpia el campo de nota.
   useEffect(() => {
-    setDraftRating(currentSong?.userRating?.toFixed(1) ?? "");
-  }, [currentSong?.entryId, currentSong?.userRating]);
+    setDraftRating("");
+  }, [currentId]);
 
+  const currentSong = currentId
+    ? songs.find((song) => song.entryId === currentId) ?? null
+    : null;
   const parsedRating = parseRatingInput(draftRating);
   const showRatingHint = draftRating.trim() !== "" && parsedRating === null;
+
+  function handleSaveAndNext() {
+    if (parsedRating === null || !currentSong) {
+      return;
+    }
+
+    onSaveRating(currentSong.entryId, parsedRating);
+
+    // Salta a otra cancion sin puntuar al azar (excluyendo la recien puntuada).
+    const remaining = songs.filter(
+      (song) => song.userRating === null && song.entryId !== currentSong.entryId
+    );
+    setCurrentId(
+      remaining.length
+        ? remaining[Math.floor(Math.random() * remaining.length)].entryId
+        : null
+    );
+  }
 
   if (!currentSong) {
     return (
       <div className="rounded-[28px] border border-glow/25 bg-glow/10 p-6 text-white">
-        <p className="section-title text-[11px] text-glowSoft">Anadir puntuacion</p>
+        <p className="section-title text-[11px] text-glowSoft">Añadir puntuación</p>
         <h3 className="mt-3 text-2xl font-semibold">Todas las canciones tienen nota</h3>
         <p className="mt-3 text-sm leading-6 text-white/72">
           Ya no quedan canciones pendientes. Puedes cambiar cualquier nota desde el listado.
@@ -68,7 +101,7 @@ export function SongRatingFlow({
         <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="section-title text-[11px] text-glowSoft">Anadir puntuacion</p>
+              <p className="section-title text-[11px] text-glowSoft">Añadir puntuación</p>
               <h3 className="mt-2 text-3xl font-semibold text-white">{currentSong.title}</h3>
               <p className="mt-2 text-sm text-white/68">{currentSong.artists.join(", ")}</p>
             </div>
@@ -105,11 +138,7 @@ export function SongRatingFlow({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => {
-                if (parsedRating !== null) {
-                  onSaveRating(currentSong.entryId, parsedRating);
-                }
-              }}
+              onClick={handleSaveAndNext}
               disabled={parsedRating === null}
               className="rounded-full bg-glow px-5 py-3 text-sm font-semibold text-ink transition hover:bg-glowSoft disabled:cursor-not-allowed disabled:opacity-45"
             >

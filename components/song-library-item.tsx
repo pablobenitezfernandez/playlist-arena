@@ -126,7 +126,7 @@ export function SongLibraryItem({
               <p className="mt-1">{song.artists.join(", ")}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Anadida</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Añadida</p>
               <p className="mt-1">{formatDate(song.addedAt)}</p>
             </div>
             <div>

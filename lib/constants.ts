@@ -40,10 +40,10 @@ export const STRATEGY_OPTIONS: Array<{
   { value: "random", label: "Aleatorio" },
   {
     value: "release-newest",
-    label: `Nuevas (ultimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos), al azar`
+    label: `Nuevas (últimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} años), al azar`
   },
   {
     value: "release-oldest",
-    label: `Antiguas (mas de ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos), al azar`
+    label: `Antiguas (más de ${TOURNAMENT_AGE_THRESHOLD_YEARS} años), al azar`
   }
 ];

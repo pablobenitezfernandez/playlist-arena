@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { PlaylistSong } from "@/lib/types";
-import { formatDate, formatReleaseDateFull } from "@/lib/utils";
+import { formatReleaseDateFull } from "@/lib/utils";
 
 type SongCardProps = {
   song: PlaylistSong;
@@ -50,14 +50,10 @@ export function SongCard({ song, onSelect, accentLabel }: SongCardProps) {
             </h3>
             <p className="text-sm text-white/70">{song.artists.join(", ")}</p>
           </div>
-          <dl className="grid gap-3 text-sm text-white/65 sm:grid-cols-2">
+          <dl className="grid gap-3 text-sm text-white/65">
             <div>
               <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Album</dt>
               <dd className="mt-1">{song.album}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Anadida</dt>
-              <dd className="mt-1">{formatDate(song.addedAt)}</dd>
             </div>
           </dl>
         </div>

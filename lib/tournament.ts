@@ -55,8 +55,8 @@ function selectSeedSongs(
   if (pool.length < size) {
     const label =
       strategy === "release-oldest"
-        ? `de hace mas de ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos`
-        : `de los ultimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos`;
+        ? `de hace más de ${TOURNAMENT_AGE_THRESHOLD_YEARS} años`
+        : `de los últimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} años`;
     throw new Error(
       `Solo hay ${pool.length} canciones ${label} y el torneo necesita ${size}. Baja la cantidad de canciones o cambia la estrategia.`
     );

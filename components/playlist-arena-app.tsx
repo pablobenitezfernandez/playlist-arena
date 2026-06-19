@@ -956,7 +956,6 @@ export function PlaylistArenaApp() {
     .slice(0, 10);
   const availableSongs = allSongs.length;
   const ratedSongsCount = allSongs.filter((song) => song.userRating !== null).length;
-  const unratedSongsCount = availableSongs - ratedSongsCount;
   const removedSongsCount = allSongs.filter((song) => !song.isInActivePlaylist).length;
   const averageRating =
     ratedSongsCount > 0
@@ -967,6 +966,15 @@ export function PlaylistArenaApp() {
   const parsedMinRating = parseOptionalRating(minRating);
   const parsedMaxRating = parseOptionalRating(maxRating);
   const normalizedSongSearch = songSearch.trim().toLowerCase();
+
+  // ¿Sobre qué nota filtran "nota mínima/máxima"? Si estamos viendo el ranking
+  // global (media de todos), usan la media; en cualquier otro caso, tu nota.
+  const filterByCommunityRating =
+    songsSection === "ranking"
+      ? rankingOrder === "community"
+      : songSortMode === "ranking-global";
+  const ratingForFilter = (song: PlaylistSong) =>
+    filterByCommunityRating ? song.communityRating : song.userRating;
 
   const filteredSongs = allSongs.filter((song) => {
     const matchesSearch =
@@ -981,13 +989,15 @@ export function PlaylistArenaApp() {
       (ratingFilterMode === "rated" && song.userRating !== null) ||
       (ratingFilterMode === "unrated" && song.userRating === null);
 
+    const ratingValue = ratingForFilter(song);
+
     const matchesMinRating =
       parsedMinRating === null ||
-      (song.userRating !== null && song.userRating >= parsedMinRating);
+      (ratingValue !== null && ratingValue >= parsedMinRating);
 
     const matchesMaxRating =
       parsedMaxRating === null ||
-      (song.userRating !== null && song.userRating <= parsedMaxRating);
+      (ratingValue !== null && ratingValue <= parsedMaxRating);
 
     return (
       matchesSearch && matchesRatingMode && matchesMinRating && matchesMaxRating
@@ -1062,7 +1072,9 @@ export function PlaylistArenaApp() {
         </label>
 
         <label className="block">
-          <span className="section-title text-[11px] text-white/45">Nota minima</span>
+          <span className="section-title text-[11px] text-white/45">
+            Nota mínima {filterByCommunityRating ? "(media de todos)" : "(tu nota)"}
+          </span>
           <input
             type="number"
             min="0"
@@ -1076,7 +1088,9 @@ export function PlaylistArenaApp() {
         </label>
 
         <label className="block">
-          <span className="section-title text-[11px] text-white/45">Nota maxima</span>
+          <span className="section-title text-[11px] text-white/45">
+            Nota máxima {filterByCommunityRating ? "(media de todos)" : "(tu nota)"}
+          </span>
           <input
             type="number"
             min="0"
@@ -1467,31 +1481,28 @@ export function PlaylistArenaApp() {
                           }
                           className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
                         >
-                          <option value="added">Fecha anadida a la playlist</option>
-                          <option value="release">Fecha de salida de la cancion</option>
-                          <option value="alpha">Orden alfabetico</option>
+                          <option value="added">Fecha añadida a la playlist</option>
+                          <option value="release">Fecha de salida de la canción</option>
+                          <option value="alpha">Orden alfabético</option>
                           <option value="ranking">Ranking (mi nota)</option>
                           <option value="ranking-global">Ranking global (media de todos)</option>
                         </select>
                       </label>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setRatingFlowOpen((current) => !current)}
-                          className="rounded-full bg-glow px-5 py-3 text-sm font-semibold text-ink transition hover:bg-glowSoft"
+                          className="rounded-full bg-glow px-5 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-glowSoft"
                         >
-                          {ratingFlowOpen ? "Cerrar puntuacion" : "Anadir puntuacion"}
+                          {ratingFlowOpen ? "Cerrar puntuación" : "Añadir puntuación"}
                         </button>
-                      </div>
-                      <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/66">
-                        Sin puntuacion: <span className="font-semibold text-white">{unratedSongsCount}</span>.
-                        Si una cancion ya no esta en Spotify seguira aqui con un icono y solo tu podras borrarla manualmente.
+                        <span className="text-sm text-white/55">
+                          Solo te muestra canciones que aún no has puntuado, en orden aleatorio.
+                        </span>
                       </div>
                       {ratingFlowOpen ? (
                         <SongRatingFlow
-                          songs={[...allSongs].sort(
-                            (a, b) => Date.parse(b.addedAt) - Date.parse(a.addedAt)
-                          )}
+                          songs={allSongs}
                           onSaveRating={handleSaveSongRating}
                           onClose={() => setRatingFlowOpen(false)}
                         />
@@ -1854,7 +1865,7 @@ export function PlaylistArenaApp() {
                             <dd className="mt-1 text-lg text-white">{champion.releaseYear}</dd>
                           </div>
                           <div>
-                            <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Anadida</dt>
+                            <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Añadida</dt>
                             <dd className="mt-1 text-lg text-white">{formatDate(champion.addedAt)}</dd>
                           </div>
                           <div>
