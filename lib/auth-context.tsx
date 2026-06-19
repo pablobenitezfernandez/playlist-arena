@@ -24,7 +24,11 @@ type AuthContextValue = {
   profile: Profile | null;
   isOwner: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<boolean>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
@@ -96,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string, displayName: string) => {
       const supabase = getSupabaseClient();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { display_name: displayName } }
@@ -105,6 +109,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         throw new Error(translateAuthError(error.message));
       }
+
+      // Sin sesión = Supabase exige confirmar el email antes de entrar.
+      return !data.session;
     },
     []
   );

@@ -78,9 +78,11 @@ function AuthScreen() {
         if (displayName.trim().length < 2) {
           throw new Error("Pon un nombre de al menos 2 caracteres.");
         }
-        await signUp(email.trim(), password, displayName.trim());
+        const needsConfirmation = await signUp(email.trim(), password, displayName.trim());
         setInfo(
-          "Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión."
+          needsConfirmation
+            ? "Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión."
+            : "Cuenta creada. Ya puedes iniciar sesión."
         );
         setMode("signin");
       }
