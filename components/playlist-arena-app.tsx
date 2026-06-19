@@ -1251,9 +1251,8 @@ export function PlaylistArenaApp() {
                 Tu playlist, tus notas, tus torneos.
               </h1>
               <p className="text-base leading-7 text-white/72 sm:text-lg">
-                La app guarda tus canciones en local, te deja puntuar, detectar repetidas, revisar
-                las ultimas actualizaciones y ordenar el ranking por nota con desempate por victorias
-                internas de torneo.
+                Entra, puntua las canciones de la playlist y compara: tu nota personal y la media de
+                todos. Monta torneos para desempatar y mira el ranking que sale entre todos.
               </p>
             </div>
 
@@ -1384,10 +1383,10 @@ export function PlaylistArenaApp() {
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="section-title text-[11px] text-glowSoft">Canciones</p>
-                  <h2 className="mt-3 text-3xl font-semibold text-white">Libreria local</h2>
+                  <h2 className="mt-3 text-3xl font-semibold text-white">Libreria compartida</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-                    Esta seccion esta organizada en cuatro apartados para que puedas buscar,
-                    puntuar, revisar la ultima sync y detectar duplicados sin perder nada.
+                    Busca y puntua las canciones de la playlist. Ordena por fecha, alfabetico o por
+                    ranking (tu nota o la media de todos), y mira las novedades de ultimos lanzamientos.
                   </p>
                 </div>
 
