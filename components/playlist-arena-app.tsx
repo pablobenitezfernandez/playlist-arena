@@ -20,11 +20,20 @@ import {
 import {
   authStorage,
   pkceStorage,
-  playlistStorage,
   syncHistoryStorage,
   tournamentArchiveStorage,
   tournamentStorage
 } from "@/lib/storage";
+import { useAuth } from "@/lib/auth-context";
+import { getSupabaseClient } from "@/lib/supabase";
+import {
+  deleteRatingFromDb,
+  deleteSongFromDb,
+  fetchSharedPlaylist,
+  saveRatingToDb,
+  saveTournamentWins,
+  syncPlaylistToDb
+} from "@/lib/db";
 import {
   advanceTournament,
   buildTournamentArchiveEntry,
@@ -125,6 +134,27 @@ function compareSongsByRanking(a: PlaylistSong, b: PlaylistSong): number {
   );
 }
 
+// Ranking por la media de la comunidad. Desempata por victorias globales de torneo.
+function compareSongsByCommunityRanking(a: PlaylistSong, b: PlaylistSong): number {
+  if (a.communityRating === null && b.communityRating === null) {
+    return b.tournamentWins - a.tournamentWins || compareSongsAlphabetically(a, b);
+  }
+
+  if (a.communityRating === null) {
+    return 1;
+  }
+
+  if (b.communityRating === null) {
+    return -1;
+  }
+
+  return (
+    b.communityRating - a.communityRating ||
+    b.tournamentWins - a.tournamentWins ||
+    compareSongsAlphabetically(a, b)
+  );
+}
+
 function getStrategyLabel(strategy: TournamentSelectionStrategy): string {
   return STRATEGY_OPTIONS.find((option) => option.value === strategy)?.label ?? strategy;
 }
@@ -183,9 +213,14 @@ function tournamentReferencesSong(
 }
 
 export function PlaylistArenaApp() {
+  const { user, isOwner, session } = useAuth();
+  const userId = user?.id ?? null;
+  const accessToken = session?.access_token ?? null;
   const [isHydrated, setIsHydrated] = useState(false);
+  const [playlistLoading, setPlaylistLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<AppSection>("songs");
   const [songsSection, setSongsSection] = useState<SongsSection>("search");
+  const [rankingOrder, setRankingOrder] = useState<"personal" | "community">("personal");
   const [auth, setAuth] = useState<SpotifyAuthSession | null>(null);
   const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
   const [tournament, setTournament] = useState<TournamentState | null>(null);
@@ -214,31 +249,21 @@ export function PlaylistArenaApp() {
   const [clearConfirmationText, setClearConfirmationText] = useState("");
 
   useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    let active = true;
+
+    // Datos locales por-usuario: torneos, historial y overlay de victorias.
     const storedAuth = authStorage.read();
-    const storedPlaylist = playlistStorage.read();
     const storedTournament = tournamentStorage.read();
     const storedTournamentArchive = tournamentArchiveStorage.read();
     const storedSyncHistory = syncHistoryStorage.read();
 
     setAuth(storedAuth);
-    setPlaylist(storedPlaylist);
-    setPlaylistUrl(storedPlaylist?.playlistUrl ?? "");
     setTournamentArchive(storedTournamentArchive);
     setSyncHistory(storedSyncHistory);
-
-    if (
-      storedTournament &&
-      storedPlaylist &&
-      storedTournament.sourcePlaylistId === storedPlaylist.playlistId
-    ) {
-      setTournament(storedTournament);
-      setMode(storedTournament.mode);
-      setSize(storedTournament.size);
-      setStrategy(storedTournament.selectionStrategy);
-    } else {
-      tournamentStorage.clear();
-      setTournament(null);
-    }
 
     if (typeof window !== "undefined") {
       const pendingSpotifyError = window.sessionStorage.getItem(
@@ -254,12 +279,118 @@ export function PlaylistArenaApp() {
       }
     }
 
-    if (!storedPlaylist) {
-      setActiveSection("updates");
+    setPlaylistLoading(true);
+
+    // La playlist (canciones + notas del usuario) vive en la base de datos.
+    fetchSharedPlaylist(userId)
+      .then((dbPlaylist) => {
+        if (!active) {
+          return;
+        }
+
+        const playlistWithWins = dbPlaylist;
+
+        setPlaylist(playlistWithWins);
+        setPlaylistUrl(playlistWithWins?.playlistUrl ?? "");
+
+        if (
+          storedTournament &&
+          playlistWithWins &&
+          storedTournament.sourcePlaylistId === playlistWithWins.playlistId
+        ) {
+          setTournament(storedTournament);
+          setMode(storedTournament.mode);
+          setSize(storedTournament.size);
+          setStrategy(storedTournament.selectionStrategy);
+        } else {
+          tournamentStorage.clear();
+          setTournament(null);
+        }
+
+        // Si no hay playlist todavia, el dueño va directo al panel para sincronizar.
+        if (!playlistWithWins && isOwner) {
+          setActiveSection("updates");
+        }
+      })
+      .catch((errorValue) => {
+        if (!active) {
+          return;
+        }
+
+        setNotice({
+          tone: "error",
+          message:
+            errorValue instanceof Error
+              ? errorValue.message
+              : "No se pudo cargar la playlist desde la base de datos."
+        });
+      })
+      .finally(() => {
+        if (active) {
+          setPlaylistLoading(false);
+          setIsHydrated(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [userId, isOwner]);
+
+  // Tiempo real: si cualquiera puntua o gana un torneo, recargamos la playlist
+  // compartida (con un pequeño retardo para agrupar rafagas de cambios).
+  useEffect(() => {
+    if (!userId) {
+      return;
     }
 
-    setIsHydrated(true);
-  }, []);
+    const supabase = getSupabaseClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const reloadNow = () => {
+      fetchSharedPlaylist(userId)
+        .then((dbPlaylist) => setPlaylist(dbPlaylist))
+        .catch(() => {});
+    };
+
+    const scheduleReload = () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(reloadNow, 600);
+    };
+
+    // Da el token de sesion al websocket de realtime para que RLS deje pasar los cambios.
+    if (accessToken) {
+      supabase.realtime.setAuth(accessToken);
+    }
+
+    const channel = supabase
+      .channel("shared-playlist")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ratings" },
+        scheduleReload
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tournament_song_wins" },
+        scheduleReload
+      )
+      .subscribe();
+
+    // Respaldo: aunque el realtime falle, refrescamos cada 30s para ver lo que
+    // hayan puntuado otras personas.
+    const pollInterval = setInterval(reloadNow, 30000);
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      clearInterval(pollInterval);
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, accessToken]);
 
   useEffect(() => {
     const options = TOURNAMENT_SIZE_OPTIONS[mode];
@@ -291,15 +422,27 @@ export function PlaylistArenaApp() {
     authStorage.clear();
   }
 
+  // La playlist (canciones) es compartida y vive en la base de datos; aqui solo
+  // actualizamos el estado en memoria. Las notas se guardan en la BD por separado
+  // (saveRatingToDb) y las victorias de torneo en el overlay local (songWinsStorage).
   function persistPlaylist(nextPlaylist: ImportedPlaylist | null) {
     setPlaylist(nextPlaylist);
+  }
 
-    if (nextPlaylist) {
-      playlistStorage.write(nextPlaylist);
+  // Recarga la playlist compartida desde la base de datos (canciones, notas de
+  // todos -> media, y victorias globales). Se usa tras completar un torneo y
+  // cuando llegan cambios en tiempo real.
+  async function reloadPlaylist() {
+    if (!userId) {
       return;
     }
 
-    playlistStorage.clear();
+    try {
+      const dbPlaylist = await fetchSharedPlaylist(userId);
+      setPlaylist(dbPlaylist);
+    } catch {
+      // Silencioso: una recarga fallida no debe romper la UI.
+    }
   }
 
   function persistTournament(nextTournament: TournamentState | null) {
@@ -423,6 +566,9 @@ export function PlaylistArenaApp() {
       };
       const nextSyncHistory = [nextHistoryEntry, ...syncHistory];
 
+      // Vuelca la playlist a la base de datos compartida (solo el dueño puede).
+      await syncPlaylistToDb(response.playlist);
+
       persistSyncHistory(nextSyncHistory);
       persistAuth(response.session);
       persistPlaylist(response.playlist);
@@ -456,28 +602,100 @@ export function PlaylistArenaApp() {
     }
   }
 
-  function handleSaveSongRating(entryId: string, rating: number) {
-    updateSong(entryId, (song) => ({
-      ...song,
-      userRating: Math.round(Math.min(Math.max(rating, 0), 10) * 10) / 10
-    }));
+  async function handleSaveSongRating(entryId: string, rating: number) {
+    if (!userId) {
+      return;
+    }
+
+    const normalizedRating = Math.round(Math.min(Math.max(rating, 0), 10) * 10) / 10;
+
+    // Actualiza tu nota Y recalcula la media al instante (sin esperar a la BD).
+    updateSong(entryId, (song) => {
+      const prevCount = song.communityRatingCount;
+      const prevSum = (song.communityRating ?? 0) * prevCount;
+      const nextCount = song.userRating === null ? prevCount + 1 : prevCount;
+      const nextSum =
+        song.userRating === null
+          ? prevSum + normalizedRating
+          : prevSum - song.userRating + normalizedRating;
+
+      return {
+        ...song,
+        userRating: normalizedRating,
+        communityRatingCount: nextCount,
+        communityRating: nextCount > 0 ? Math.round((nextSum / nextCount) * 10) / 10 : null
+      };
+    });
+
+    try {
+      await saveRatingToDb(userId, entryId, normalizedRating);
+    } catch (errorValue) {
+      setNotice({
+        tone: "error",
+        message:
+          errorValue instanceof Error
+            ? errorValue.message
+            : "No se pudo guardar la nota en la base de datos."
+      });
+    }
   }
 
-  function handleClearSongRating(entryId: string) {
-    updateSong(entryId, (song) => ({
-      ...song,
-      userRating: null
-    }));
+  async function handleClearSongRating(entryId: string) {
+    if (!userId) {
+      return;
+    }
+
+    // Quita tu nota Y recalcula la media al instante.
+    updateSong(entryId, (song) => {
+      if (song.userRating === null) {
+        return song;
+      }
+
+      const nextCount = Math.max(song.communityRatingCount - 1, 0);
+      const nextSum = (song.communityRating ?? 0) * song.communityRatingCount - song.userRating;
+
+      return {
+        ...song,
+        userRating: null,
+        communityRatingCount: nextCount,
+        communityRating: nextCount > 0 ? Math.round((nextSum / nextCount) * 10) / 10 : null
+      };
+    });
+
+    try {
+      await deleteRatingFromDb(userId, entryId);
+    } catch (errorValue) {
+      setNotice({
+        tone: "error",
+        message:
+          errorValue instanceof Error
+            ? errorValue.message
+            : "No se pudo borrar la nota en la base de datos."
+      });
+    }
   }
 
-  function handleDeleteRemovedSong(entryId: string) {
-    if (!playlist) {
+  async function handleDeleteRemovedSong(entryId: string) {
+    if (!playlist || !isOwner) {
       return;
     }
 
     const targetSong = playlist.songs.find((song) => song.entryId === entryId);
 
     if (!targetSong || targetSong.isInActivePlaylist) {
+      return;
+    }
+
+    try {
+      await deleteSongFromDb(entryId);
+    } catch (errorValue) {
+      setNotice({
+        tone: "error",
+        message:
+          errorValue instanceof Error
+            ? errorValue.message
+            : "No se pudo eliminar la cancion de la base de datos."
+      });
       return;
     }
 
@@ -546,12 +764,14 @@ export function PlaylistArenaApp() {
     }
   }
 
-  function applyCompletedTournamentResults(nextTournament: TournamentState) {
-    if (!playlist || !nextTournament.completed || !nextTournament.championId) {
+  async function applyCompletedTournamentResults(nextTournament: TournamentState) {
+    if (!playlist || !nextTournament.completed || !nextTournament.championId || !userId) {
       return null;
     }
 
     const winCounts = getTournamentWinCounts(nextTournament);
+    // Optimista en memoria: suma las victorias de este torneo para mostrar al
+    // campeon y guardar el archivo local al instante.
     const nextSongs = playlist.songs.map((song) => ({
       ...song,
       tournamentWins: song.tournamentWins + (winCounts.get(song.entryId) ?? 0)
@@ -566,14 +786,31 @@ export function PlaylistArenaApp() {
       playlist: nextPlaylist,
       tournament: nextTournament
     });
+    const champion =
+      nextPlaylist.songs.find((song) => song.entryId === nextTournament.championId) ?? null;
 
     persistPlaylist(nextPlaylist);
     persistTournamentArchive([archiveEntry, ...tournamentArchive]);
 
-    return nextPlaylist.songs.find((song) => song.entryId === nextTournament.championId) ?? null;
+    // Registra las victorias en la base de datos compartida y recarga para
+    // tener el conteo global (de todas las personas).
+    try {
+      await saveTournamentWins(userId, nextTournament.id, winCounts);
+      await reloadPlaylist();
+    } catch (errorValue) {
+      setNotice({
+        tone: "error",
+        message:
+          errorValue instanceof Error
+            ? errorValue.message
+            : "No se pudieron guardar las victorias del torneo en la base de datos."
+      });
+    }
+
+    return champion;
   }
 
-  function handlePickWinner(songId: string) {
+  async function handlePickWinner(songId: string) {
     if (!tournament) {
       return;
     }
@@ -582,7 +819,7 @@ export function PlaylistArenaApp() {
       const nextTournament = advanceTournament(tournament, songId);
 
       if (nextTournament.completed) {
-        const champion = applyCompletedTournamentResults(nextTournament);
+        const champion = await applyCompletedTournamentResults(nextTournament);
         persistTournament(nextTournament);
         setNotice({
           tone: "success",
@@ -681,12 +918,13 @@ export function PlaylistArenaApp() {
   }
 
   function handleClearImportedData() {
-    persistPlaylist(null);
+    // La playlist, las notas y las victorias de torneo son compartidas (estan en
+    // la base de datos) y NO se tocan aqui. Esto solo limpia el estado local del
+    // torneo en curso y el historial local de torneos de este navegador.
     persistTournament(null);
     persistTournamentArchive([]);
     persistSyncHistory([]);
-    setPlaylistUrl("");
-    setActiveSection("updates");
+
     setSongsSection("search");
     setExpandedSongId(null);
     setRatingFlowOpen(false);
@@ -695,7 +933,7 @@ export function PlaylistArenaApp() {
     resetSongFilters();
     setNotice({
       tone: "info",
-      message: "Se han borrado los datos locales de la playlist, del historial de updates, del torneo actual y del historial de torneos."
+      message: "Se han borrado tus datos locales de torneos (torneo actual, historial y victorias). La playlist y las notas compartidas no se han tocado."
     });
   }
 
@@ -761,7 +999,9 @@ export function PlaylistArenaApp() {
   });
 
   const searchSongs = [...filteredSongs].sort(compareSongsAlphabetically);
-  const rankingSongs = [...filteredSongs].sort(compareSongsByRanking);
+  const rankingSongs = [...filteredSongs].sort(
+    rankingOrder === "community" ? compareSongsByCommunityRanking : compareSongsByRanking
+  );
   const sizeOptions = TOURNAMENT_SIZE_OPTIONS[mode];
   const currentRound = tournament ? getCurrentRound(tournament) : undefined;
   const currentMatch = tournament ? getCurrentMatch(tournament) : undefined;
@@ -872,6 +1112,29 @@ export function PlaylistArenaApp() {
     );
   }
 
+  if (playlistLoading && !playlist) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <p className="text-sm text-white/45">Cargando la playlist…</p>
+      </main>
+    );
+  }
+
+  if (!playlist && !isOwner) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="glass-panel max-w-md rounded-[28px] p-8 text-center">
+          <p className="section-title text-xs text-glowSoft">Playlist Arena</p>
+          <h1 className="mt-3 text-2xl font-semibold text-white">Aun no hay playlist</h1>
+          <p className="mt-3 text-sm leading-6 text-white/60">
+            El dueño todavia no ha configurado la playlist compartida. Vuelve a entrar dentro de un
+            rato: en cuanto la sincronice, apareceran todas las canciones aqui.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -935,11 +1198,29 @@ export function PlaylistArenaApp() {
                 }`}
               >
                 <p className="section-title text-[11px] text-glowSoft">Opcion 3</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Actualizar datos</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-white">
+                  {isOwner ? "Administrar playlist" : "Estado de la playlist"}
+                </h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
-                  Sincroniza tu playlist unica, anade canciones nuevas y revisa el historial de updates.
+                  {isOwner
+                    ? "Sincroniza la playlist desde Spotify a la base de datos compartida y revisa el historial."
+                    : "Mira el estado de la playlist compartida y el historial de actualizaciones."}
                 </p>
               </button>
+            </div>
+
+            <div className="flex">
+              <a
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition"
+                style={{
+                  background: "rgba(30,215,96,0.1)",
+                  border: "1px solid rgba(30,215,96,0.25)",
+                  color: "rgba(30,215,96,0.85)"
+                }}
+              >
+                <span>📊</span> Ver Dashboard
+              </a>
             </div>
           </div>
         </section>
@@ -1104,9 +1385,37 @@ export function PlaylistArenaApp() {
                   {songsSection === "ranking" ? (
                     <div className="space-y-6">
                       {renderSongFilters()}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="section-title text-[11px] text-white/45">Ordenar por</span>
+                        <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setRankingOrder("personal")}
+                            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                              rankingOrder === "personal"
+                                ? "bg-glow text-ink"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            Mi nota
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRankingOrder("community")}
+                            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                              rankingOrder === "community"
+                                ? "bg-glow text-ink"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            Media de todos
+                          </button>
+                        </div>
+                      </div>
                       <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/66">
-                        El ranking se ordena por nota, luego por victorias acumuladas en torneos y,
-                        si sigue habiendo empate, por orden alfabetico.
+                        {rankingOrder === "personal"
+                          ? "Ordenado por TU nota personal. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabetico."
+                          : "Ordenado por la MEDIA de las notas de todos. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabetico."}
                       </div>
                       {rankingSongs.length ? (
                         <div className="space-y-4">
@@ -1115,7 +1424,11 @@ export function PlaylistArenaApp() {
                               <div className="flex items-center justify-between px-2 text-xs uppercase tracking-[0.2em] text-white/40">
                                 <span>Posicion #{index + 1}</span>
                                 <span>
-                                  Nota {formatRating(song.userRating)} | Victorias {song.tournamentWins}
+                                  Tu {formatRating(song.userRating)} | Media{" "}
+                                  {song.communityRating === null
+                                    ? "—"
+                                    : `${formatRating(song.communityRating)} (${song.communityRatingCount})`}{" "}
+                                  | Victorias {song.tournamentWins}
                                 </span>
                               </div>
                               <SongLibraryItem
@@ -1706,11 +2019,12 @@ export function PlaylistArenaApp() {
         {activeSection === "updates" ? (
           <section className="grid gap-8 xl:grid-cols-[360px,1fr]">
             <aside className="space-y-6">
+              {isOwner ? (
               <section className="glass-panel rounded-[32px] p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-title text-[11px] text-glowSoft">Spotify</p>
-                    <h2 className="mt-3 text-2xl font-semibold text-white">Actualizar datos</h2>
+                    <p className="section-title text-[11px] text-glowSoft">Spotify · solo dueño</p>
+                    <h2 className="mt-3 text-2xl font-semibold text-white">Administrar playlist</h2>
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.22em] ${
@@ -1756,16 +2070,17 @@ export function PlaylistArenaApp() {
                   </button>
 
                   <p className="text-sm leading-6 text-white/60">
-                    La app solo trabaja con una playlist. Si introduces otra distinta, se mostrara un
-                    popup y no se sustituiran tus datos.
+                    La app solo trabaja con una playlist. Al sincronizar, las canciones se guardan en
+                    la base de datos compartida y todos las veran al entrar.
                   </p>
                 </div>
               </section>
+              ) : null}
 
               <section className="glass-panel rounded-[32px] p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="section-title text-[11px] text-glowSoft">Datos locales</p>
+                    <p className="section-title text-[11px] text-glowSoft">Playlist compartida</p>
                     <h2 className="mt-3 text-2xl font-semibold text-white">Estado</h2>
                   </div>
                   {playlist ? (
@@ -1932,9 +2247,9 @@ export function PlaylistArenaApp() {
             <p className="section-title text-[11px] text-rose">Borrado local</p>
             <h2 className="mt-3 text-2xl font-semibold text-white">Confirmar limpieza</h2>
             <p className="mt-4 text-sm leading-6 text-white/72">
-              Esto borrara de este navegador la playlist importada, notas, torneo actual,
-              historial de actualizaciones e historial de torneos. Antes de limpiar, puedes usar
-              `Exportar` para guardar una copia JSON.
+              Esto borra solo el torneo en curso y el historial local de torneos de este navegador.
+              La playlist, las notas y las victorias compartidas (en la base de datos) NO se tocan.
+              Antes de limpiar, puedes usar `Exportar` para guardar una copia JSON.
             </p>
 
             <label className="mt-5 block space-y-2">

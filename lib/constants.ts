@@ -12,7 +12,8 @@ export const LOCAL_STORAGE_KEYS = {
   tournament: "playlist-arena.tournament",
   tournamentArchive: "playlist-arena.tournament-archive",
   lastSyncSummary: "playlist-arena.last-sync-summary",
-  syncHistory: "playlist-arena.sync-history"
+  syncHistory: "playlist-arena.sync-history",
+  songWins: "playlist-arena.song-wins"
 } as const;
 
 export const SESSION_STORAGE_KEYS = {

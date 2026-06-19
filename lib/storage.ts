@@ -72,7 +72,9 @@ function normalizePlaylistSong(song: PlaylistSong): PlaylistSong {
     ...song,
     userRating: song.userRating ?? null,
     isInActivePlaylist: song.isInActivePlaylist ?? true,
-    tournamentWins: song.tournamentWins ?? 0
+    tournamentWins: song.tournamentWins ?? 0,
+    communityRating: song.communityRating ?? null,
+    communityRatingCount: song.communityRatingCount ?? 0
   };
 }
 
@@ -101,6 +103,18 @@ export const playlistStorage = {
   read: () => normalizeImportedPlaylist(readJson<ImportedPlaylist>(LOCAL_STORAGE_KEYS.playlist)),
   write: (value: ImportedPlaylist) => writeJson(LOCAL_STORAGE_KEYS.playlist, value),
   clear: () => clearValue(LOCAL_STORAGE_KEYS.playlist)
+};
+
+/**
+ * Victorias de torneo por cancion, guardadas SOLO en local (por usuario/navegador).
+ * La playlist es compartida en la base de datos, pero los torneos siguen siendo
+ * de cada persona, asi que estas victorias son un overlay local sobre las
+ * canciones compartidas. Mapa entryId -> numero de victorias.
+ */
+export const songWinsStorage = {
+  read: () => readJson<Record<string, number>>(LOCAL_STORAGE_KEYS.songWins) ?? {},
+  write: (value: Record<string, number>) => writeJson(LOCAL_STORAGE_KEYS.songWins, value),
+  clear: () => clearValue(LOCAL_STORAGE_KEYS.songWins)
 };
 
 export const tournamentStorage = {

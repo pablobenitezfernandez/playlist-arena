@@ -87,15 +87,24 @@ export function SongLibraryItem({
               </div>
               <p className="mt-1 truncate text-sm text-white/68">{song.artists.join(", ")}</p>
             </div>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                song.userRating === null
-                  ? "border border-white/10 bg-white/5 text-white/50"
-                  : "border border-glow/35 bg-glow/10 text-glowSoft"
-              }`}
-            >
-              {song.userRating === null ? "Sin puntuacion" : `Nota ${formatRating(song.userRating)}`}
-            </span>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  song.userRating === null
+                    ? "border border-white/10 bg-white/5 text-white/50"
+                    : "border border-glow/35 bg-glow/10 text-glowSoft"
+                }`}
+              >
+                {song.userRating === null
+                  ? "Sin nota tuya"
+                  : `Tu nota ${formatRating(song.userRating)}`}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/60">
+                {song.communityRating === null
+                  ? "Media —"
+                  : `Media ${formatRating(song.communityRating)} (${song.communityRatingCount})`}
+              </span>
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/48">
@@ -135,7 +144,21 @@ export function SongLibraryItem({
               <p className="mt-1">{formatDuration(song.durationMs)}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Victorias</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">
+                Media de todos
+              </p>
+              <p className="mt-1">
+                {song.communityRating === null
+                  ? "Sin notas todavia"
+                  : `${formatRating(song.communityRating)} (${song.communityRatingCount} ${
+                      song.communityRatingCount === 1 ? "voto" : "votos"
+                    })`}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">
+                Victorias (todos)
+              </p>
               <p className="mt-1">{song.tournamentWins}</p>
             </div>
             <div>

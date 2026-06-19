@@ -313,7 +313,9 @@ function mapTrackToSong(item: SpotifyTrackItem, sequence: number): PlaylistSong 
     durationMs: track.duration_ms,
     userRating: null,
     isInActivePlaylist: true,
-    tournamentWins: 0
+    tournamentWins: 0,
+    communityRating: null,
+    communityRatingCount: 0
   };
 }
 

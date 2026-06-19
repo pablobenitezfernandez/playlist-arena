@@ -21,7 +21,11 @@ export type PlaylistSong = {
   durationMs: number;
   userRating: number | null;
   isInActivePlaylist: boolean;
+  // tournamentWins es GLOBAL: suma de victorias de todas las personas.
   tournamentWins: number;
+  // Nota media de la comunidad (media de todas las puntuaciones) y cuantas personas la han puntuado.
+  communityRating: number | null;
+  communityRatingCount: number;
 };
 
 export type ImportedPlaylist = {
