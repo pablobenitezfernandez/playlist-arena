@@ -41,6 +41,18 @@ select {
   font: inherit;
 }
 
+/* Desplegables: que la lista abierta use el tema oscuro y se lea bien */
+select option {
+  background-color: #0c1711;
+  color: #f2fff7;
+}
+
+select option:checked,
+select option:hover {
+  background-color: #1ed760;
+  color: #06210f;
+}
+
 ::selection {
   background: rgba(30, 215, 96, 0.3);
   color: #f6fff9;

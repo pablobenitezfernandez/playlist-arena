@@ -56,7 +56,7 @@ import type {
   TournamentSelectionStrategy,
   TournamentState
 } from "@/lib/types";
-import { formatDate, formatDateTime, formatRating } from "@/lib/utils";
+import { formatDate, formatDateTime, formatRating, parseReleaseDate } from "@/lib/utils";
 
 type Notice = {
   tone: "success" | "error" | "info";
@@ -73,7 +73,7 @@ type SyncOptions = {
 };
 
 type AppSection = "songs" | "tournament" | "updates";
-type SongsSection = "search" | "ranking" | "latest-update" | "duplicates";
+type SongsSection = "search" | "ranking";
 type RatingFilterMode = "all" | "rated" | "unrated";
 
 type DuplicateGroup = {
@@ -237,8 +237,6 @@ export function PlaylistArenaApp() {
     useState<RatingFilterMode>("all");
   const [minRating, setMinRating] = useState("");
   const [maxRating, setMaxRating] = useState("");
-  const [onlyRepeatedFilter, setOnlyRepeatedFilter] = useState(false);
-  const [onlyLatestUpdateFilter, setOnlyLatestUpdateFilter] = useState(false);
   const [expandedSongId, setExpandedSongId] = useState<string | null>(null);
   const [ratingFlowOpen, setRatingFlowOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<"auth" | "playlist" | "tournament" | null>(
@@ -494,8 +492,6 @@ export function PlaylistArenaApp() {
     setRatingFilterMode("all");
     setMinRating("");
     setMaxRating("");
-    setOnlyRepeatedFilter(false);
-    setOnlyLatestUpdateFilter(false);
   }
 
   async function handleConnectSpotify() {
@@ -943,13 +939,11 @@ export function PlaylistArenaApp() {
   const latestSyncSongs = (latestSync?.addedSongs ?? []).map(
     (song) => getSongById(playlist, song.entryId) ?? song
   );
-  const latestUpdateEntryIds = new Set(
-    (latestSync?.addedSongs ?? []).map((song) => song.entryId)
-  );
   const duplicateGroups = buildDuplicateGroups(allSongs);
-  const repeatedEntryIds = new Set(
-    duplicateGroups.flatMap((group) => group.songs.map((song) => song.entryId))
-  );
+  // Novedades: las 10 canciones publicadas mas recientemente (por fecha de lanzamiento).
+  const newReleases = [...allSongs]
+    .sort((a, b) => parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate))
+    .slice(0, 10);
   const availableSongs = allSongs.length;
   const ratedSongsCount = allSongs.filter((song) => song.userRating !== null).length;
   const unratedSongsCount = availableSongs - ratedSongsCount;
@@ -985,17 +979,8 @@ export function PlaylistArenaApp() {
       parsedMaxRating === null ||
       (song.userRating !== null && song.userRating <= parsedMaxRating);
 
-    const matchesRepeated = !onlyRepeatedFilter || repeatedEntryIds.has(song.entryId);
-    const matchesLatestUpdate =
-      !onlyLatestUpdateFilter || latestUpdateEntryIds.has(song.entryId);
-
     return (
-      matchesSearch &&
-      matchesRatingMode &&
-      matchesMinRating &&
-      matchesMaxRating &&
-      matchesRepeated &&
-      matchesLatestUpdate
+      matchesSearch && matchesRatingMode && matchesMinRating && matchesMaxRating
     );
   });
 
@@ -1080,26 +1065,6 @@ export function PlaylistArenaApp() {
           />
         </label>
 
-        <label className="flex items-center gap-3 rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/72">
-          <input
-            type="checkbox"
-            checked={onlyRepeatedFilter}
-            onChange={(event) => setOnlyRepeatedFilter(event.target.checked)}
-            className="h-4 w-4 accent-green-500"
-          />
-          Solo repetidas
-        </label>
-
-        <label className="flex items-center gap-3 rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/72">
-          <input
-            type="checkbox"
-            checked={onlyLatestUpdateFilter}
-            onChange={(event) => setOnlyLatestUpdateFilter(event.target.checked)}
-            className="h-4 w-4 accent-green-500"
-          />
-          Solo de ultima actualizacion
-        </label>
-
         <div className="flex items-end">
           <button
             type="button"
@@ -1109,6 +1074,120 @@ export function PlaylistArenaApp() {
             Limpiar filtros
           </button>
         </div>
+      </div>
+    );
+  }
+
+  function renderLatestUpdate() {
+    return (
+      <div className="space-y-6">
+        {latestSync ? (
+          <div className="space-y-6">
+            <div className="rounded-[26px] border border-white/10 bg-white/5 p-5">
+              <p className="section-title text-[11px] text-glowSoft">Ultima actualizacion</p>
+              <h3 className="mt-3 text-2xl font-semibold text-white">{latestSync.playlistName}</h3>
+              <p className="mt-3 text-sm text-white/68">Fecha: {formatDate(latestSync.syncedAt)}</p>
+              <p className="mt-2 text-sm text-white/68">
+                Total de Canciones Nuevas: {latestSync.addedSongs.length} canciones
+              </p>
+            </div>
+
+            {latestSyncSongs.length ? (
+              <div className="space-y-4">
+                {latestSyncSongs.map((song) => (
+                  <SongLibraryItem
+                    key={song.entryId}
+                    song={song}
+                    expanded={expandedSongId === song.entryId}
+                    onToggle={() =>
+                      setExpandedSongId((current) =>
+                        current === song.entryId ? null : song.entryId
+                      )
+                    }
+                    onSaveRating={handleSaveSongRating}
+                    onClearRating={handleClearSongRating}
+                    onDeleteArchived={handleDeleteRemovedSong}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
+                La ultima actualizacion no anadio canciones nuevas.
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <p className="section-title text-[11px] text-white/40">Historial de actualizaciones</p>
+              {syncHistory.map((entry) => (
+                <div key={entry.id} className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">{entry.playlistName}</p>
+                      <p className="mt-1 text-sm text-white/60">{formatDate(entry.syncedAt)}</p>
+                    </div>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">
+                      {entry.addedSongs.length} nuevas
+                    </span>
+                  </div>
+                  {entry.addedSongs.length ? (
+                    <div className="mt-4 text-sm leading-6 text-white/64">
+                      {entry.addedSongs.map((song) => song.title).join("  |  ")}
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-sm leading-6 text-white/50">
+                      Sin canciones nuevas en esta actualizacion.
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
+            Todavia no hay historial de actualizaciones.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderDuplicates() {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/66">
+          Las repetidas se detectan por mismo titulo y mismo autor principal.
+        </div>
+        {duplicateGroups.length ? (
+          <div className="space-y-6">
+            {duplicateGroups.map((group) => (
+              <div key={group.key} className="space-y-4">
+                <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-lg font-semibold text-white">{group.label}</p>
+                  <p className="mt-1 text-sm text-white/58">{group.songs.length} entradas detectadas</p>
+                </div>
+                {group.songs.map((song) => (
+                  <SongLibraryItem
+                    key={song.entryId}
+                    song={song}
+                    expanded={expandedSongId === song.entryId}
+                    onToggle={() =>
+                      setExpandedSongId((current) =>
+                        current === song.entryId ? null : song.entryId
+                      )
+                    }
+                    onSaveRating={handleSaveSongRating}
+                    onClearRating={handleClearSongRating}
+                    onDeleteArchived={handleDeleteRemovedSong}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
+            No se han detectado canciones repetidas.
+          </div>
+        )}
       </div>
     );
   }
@@ -1169,7 +1248,7 @@ export function PlaylistArenaApp() {
                 <p className="section-title text-[11px] text-glowSoft">Opcion 1</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Canciones</h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
-                  Busqueda, ranking, canciones de la ultima actualizacion y canciones repetidas.
+                  Busca y puntua canciones, y mira el ranking por tu nota o por la media de todos.
                 </p>
               </button>
 
@@ -1225,6 +1304,47 @@ export function PlaylistArenaApp() {
             </div>
           </div>
         </section>
+
+        {newReleases.length ? (
+          <section className="glass-panel rounded-[32px] p-6 sm:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="section-title text-[11px] text-glowSoft">Novedades</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Ultimos lanzamientos</h2>
+              </div>
+              <span className="text-xs text-white/45">
+                Las 10 canciones mas recientes por fecha de salida
+              </span>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {newReleases.map((song) => (
+                <div
+                  key={song.entryId}
+                  className="rounded-[20px] border border-white/10 bg-white/5 p-3"
+                >
+                  <div className="relative aspect-square w-full overflow-hidden rounded-[14px] bg-white/5">
+                    {song.coverUrl ? (
+                      <Image
+                        src={song.coverUrl}
+                        alt={`${song.title} cover`}
+                        fill
+                        sizes="160px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-white/40">
+                        Sin portada
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-2 truncate text-sm font-semibold text-white">{song.title}</p>
+                  <p className="truncate text-xs text-white/55">{song.artists.join(", ")}</p>
+                  <p className="mt-1 text-xs text-glowSoft">{song.releaseYear}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {notice ? (
           <div
@@ -1285,7 +1405,7 @@ export function PlaylistArenaApp() {
                 </div>
               ) : (
                 <div className="mt-8 space-y-6">
-                  <div className="grid gap-3 md:grid-cols-4">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <button
                       type="button"
                       onClick={() => setSongsSection("search")}
@@ -1307,28 +1427,6 @@ export function PlaylistArenaApp() {
                       }`}
                     >
                       Ranking
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSongsSection("latest-update")}
-                      className={`rounded-[22px] border px-4 py-3 text-sm font-semibold transition ${
-                        songsSection === "latest-update"
-                          ? "border-glow/35 bg-glow/12 text-white"
-                          : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:bg-white/10"
-                      }`}
-                    >
-                      Canciones de la ultima actualizacion
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSongsSection("duplicates")}
-                      className={`rounded-[22px] border px-4 py-3 text-sm font-semibold transition ${
-                        songsSection === "duplicates"
-                          ? "border-glow/35 bg-glow/12 text-white"
-                          : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:bg-white/10"
-                      }`}
-                    >
-                      Canciones repetidas
                     </button>
                   </div>
 
@@ -1455,126 +1553,6 @@ export function PlaylistArenaApp() {
                     </div>
                   ) : null}
 
-                  {songsSection === "latest-update" ? (
-                    <div className="space-y-6">
-                      {latestSync ? (
-                        <div className="space-y-6">
-                          <div className="rounded-[26px] border border-white/10 bg-white/5 p-5">
-                            <p className="section-title text-[11px] text-glowSoft">Ultima actualizacion</p>
-                            <h3 className="mt-3 text-2xl font-semibold text-white">
-                              {latestSync.playlistName}
-                            </h3>
-                            <p className="mt-3 text-sm text-white/68">
-                              Fecha: {formatDate(latestSync.syncedAt)}
-                            </p>
-                            <p className="mt-2 text-sm text-white/68">
-                              Total de Canciones Nuevas: {latestSync.addedSongs.length} canciones
-                            </p>
-                          </div>
-
-                          {latestSyncSongs.length ? (
-                            <div className="space-y-4">
-                              {latestSyncSongs.map((song) => (
-                                <SongLibraryItem
-                                  key={song.entryId}
-                                  song={song}
-                                  expanded={expandedSongId === song.entryId}
-                                  onToggle={() =>
-                                    setExpandedSongId((current) =>
-                                      current === song.entryId ? null : song.entryId
-                                    )
-                                  }
-                                  onSaveRating={handleSaveSongRating}
-                                  onClearRating={handleClearSongRating}
-                                  onDeleteArchived={handleDeleteRemovedSong}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                              La ultima actualizacion no anadio canciones nuevas.
-                            </div>
-                          )}
-
-                          <div className="space-y-4">
-                            <p className="section-title text-[11px] text-white/40">Historial de actualizaciones</p>
-                            {syncHistory.map((entry) => (
-                              <div
-                                key={entry.id}
-                                className="rounded-[24px] border border-white/10 bg-white/5 p-5"
-                              >
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                  <div>
-                                    <p className="text-lg font-semibold text-white">{entry.playlistName}</p>
-                                    <p className="mt-1 text-sm text-white/60">
-                                      {formatDate(entry.syncedAt)}
-                                    </p>
-                                  </div>
-                                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">
-                                    {entry.addedSongs.length} nuevas
-                                  </span>
-                                </div>
-                                {entry.addedSongs.length ? (
-                                  <div className="mt-4 text-sm leading-6 text-white/64">
-                                    {entry.addedSongs.map((song) => song.title).join("  |  ")}
-                                  </div>
-                                ) : (
-                                  <div className="mt-4 text-sm leading-6 text-white/50">
-                                    Sin canciones nuevas en esta actualizacion.
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                          Todavia no hay historial de actualizaciones.
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-
-                  {songsSection === "duplicates" ? (
-                    <div className="space-y-6">
-                      <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/66">
-                        Las repetidas se detectan por mismo titulo y mismo autor principal.
-                      </div>
-                      {duplicateGroups.length ? (
-                        <div className="space-y-6">
-                          {duplicateGroups.map((group) => (
-                            <div key={group.key} className="space-y-4">
-                              <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3">
-                                <p className="text-lg font-semibold text-white">{group.label}</p>
-                                <p className="mt-1 text-sm text-white/58">
-                                  {group.songs.length} entradas detectadas
-                                </p>
-                              </div>
-                              {group.songs.map((song) => (
-                                <SongLibraryItem
-                                  key={song.entryId}
-                                  song={song}
-                                  expanded={expandedSongId === song.entryId}
-                                  onToggle={() =>
-                                    setExpandedSongId((current) =>
-                                      current === song.entryId ? null : song.entryId
-                                    )
-                                  }
-                                  onSaveRating={handleSaveSongRating}
-                                  onClearRating={handleClearSongRating}
-                                  onDeleteArchived={handleDeleteRemovedSong}
-                                />
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                          No se han detectado canciones repetidas.
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
                 </div>
               )}
             </div>
@@ -2166,78 +2144,23 @@ export function PlaylistArenaApp() {
               </section>
             </aside>
 
-            <section className="space-y-6">
-              <div className="glass-panel rounded-[32px] p-6 sm:p-8">
-                <p className="section-title text-[11px] text-glowSoft">Novedades</p>
-                <h2 className="mt-3 text-3xl font-semibold text-white">Historial de actualizaciones</h2>
+            {isOwner ? (
+              <section className="space-y-6">
+                <div className="glass-panel rounded-[32px] p-6 sm:p-8">
+                  <p className="section-title text-[11px] text-glowSoft">Solo dueño</p>
+                  <h2 className="mt-3 text-3xl font-semibold text-white">
+                    Canciones de la ultima actualizacion
+                  </h2>
+                  <div className="mt-6">{renderLatestUpdate()}</div>
+                </div>
 
-                {syncHistory.length ? (
-                  <div className="mt-8 space-y-4">
-                    {syncHistory.map((entry, index) => (
-                      <div
-                        key={entry.id}
-                        className="rounded-[24px] border border-white/10 bg-white/5 p-5"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="section-title text-[11px] text-white/40">
-                              {index === 0 ? "Ultima actualizacion" : "Actualizacion anterior"}
-                            </p>
-                            <p className="mt-2 text-lg font-semibold text-white">{entry.playlistName}</p>
-                            <p className="mt-1 text-sm text-white/58">{formatDate(entry.syncedAt)}</p>
-                          </div>
-                          <span className="rounded-full border border-glow/25 bg-glow/10 px-4 py-2 text-sm font-semibold text-glowSoft">
-                            Total de Canciones Nuevas: {entry.addedSongs.length} canciones
-                          </span>
-                        </div>
-
-                        {entry.addedSongs.length ? (
-                          <div className="mt-4 grid gap-4 md:grid-cols-2">
-                            {entry.addedSongs.map((song) => (
-                              <div
-                                key={`${entry.id}-${song.entryId}`}
-                                className="rounded-[20px] border border-white/10 bg-black/20 p-4"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div className="relative h-16 w-16 overflow-hidden rounded-[18px] bg-white/5">
-                                    {song.coverUrl ? (
-                                      <Image
-                                        src={song.coverUrl}
-                                        alt={`${song.title} cover`}
-                                        fill
-                                        sizes="64px"
-                                        className="object-cover"
-                                      />
-                                      ) : (
-                                      <div className="flex h-full items-center justify-center text-xs text-white/40">
-                                        Sin portada
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="truncate text-lg font-semibold text-white">{song.title}</p>
-                                    <p className="truncate text-sm text-white/62">{song.artists.join(", ")}</p>
-                                    <p className="mt-1 text-xs text-white/42">{song.album}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="mt-4 text-sm text-white/58">
-                            En esta actualizacion no entraron canciones nuevas.
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-8 rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                    Todavia no hay historial de actualizaciones guardado.
-                  </div>
-                )}
-              </div>
-            </section>
+                <div className="glass-panel rounded-[32px] p-6 sm:p-8">
+                  <p className="section-title text-[11px] text-glowSoft">Solo dueño</p>
+                  <h2 className="mt-3 text-3xl font-semibold text-white">Canciones repetidas</h2>
+                  <div className="mt-6">{renderDuplicates()}</div>
+                </div>
+              </section>
+            ) : null}
           </section>
         ) : null}
       </div>
