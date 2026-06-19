@@ -56,7 +56,13 @@ import type {
   TournamentSelectionStrategy,
   TournamentState
 } from "@/lib/types";
-import { formatDate, formatDateTime, formatRating, parseReleaseDate } from "@/lib/utils";
+import {
+  formatDate,
+  formatDateTime,
+  formatRating,
+  formatReleaseDateFull,
+  parseReleaseDate
+} from "@/lib/utils";
 
 type Notice = {
   tone: "success" | "error" | "info";
@@ -74,6 +80,7 @@ type SyncOptions = {
 
 type AppSection = "songs" | "tournament" | "updates";
 type SongsSection = "search" | "ranking";
+type SongSortMode = "added" | "release" | "alpha" | "ranking" | "ranking-global";
 type RatingFilterMode = "all" | "rated" | "unrated";
 
 type DuplicateGroup = {
@@ -222,6 +229,7 @@ export function PlaylistArenaApp() {
   const [activeSection, setActiveSection] = useState<AppSection>("songs");
   const [songsSection, setSongsSection] = useState<SongsSection>("search");
   const [rankingOrder, setRankingOrder] = useState<"personal" | "community">("personal");
+  const [songSortMode, setSongSortMode] = useState<SongSortMode>("alpha");
   const [auth, setAuth] = useState<SpotifyAuthSession | null>(null);
   const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
   const [tournament, setTournament] = useState<TournamentState | null>(null);
@@ -984,7 +992,21 @@ export function PlaylistArenaApp() {
     );
   });
 
-  const searchSongs = [...filteredSongs].sort(compareSongsAlphabetically);
+  const songSortComparators: Record<
+    SongSortMode,
+    (a: PlaylistSong, b: PlaylistSong) => number
+  > = {
+    alpha: compareSongsAlphabetically,
+    ranking: compareSongsByRanking,
+    "ranking-global": compareSongsByCommunityRanking,
+    added: (a, b) =>
+      (Date.parse(b.addedAt) || 0) - (Date.parse(a.addedAt) || 0) ||
+      compareSongsAlphabetically(a, b),
+    release: (a, b) =>
+      parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate) ||
+      compareSongsAlphabetically(a, b)
+  };
+  const searchSongs = [...filteredSongs].sort(songSortComparators[songSortMode]);
   const rankingSongs = [...filteredSongs].sort(
     rankingOrder === "community" ? compareSongsByCommunityRanking : compareSongsByRanking
   );
@@ -1305,7 +1327,7 @@ export function PlaylistArenaApp() {
           </div>
         </section>
 
-        {newReleases.length ? (
+        {activeSection === "songs" && newReleases.length ? (
           <section className="glass-panel rounded-[32px] p-6 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1339,7 +1361,9 @@ export function PlaylistArenaApp() {
                   </div>
                   <p className="mt-2 truncate text-sm font-semibold text-white">{song.title}</p>
                   <p className="truncate text-xs text-white/55">{song.artists.join(", ")}</p>
-                  <p className="mt-1 text-xs text-glowSoft">{song.releaseYear}</p>
+                  <p className="mt-1 text-xs text-glowSoft">
+                    {formatReleaseDateFull(song.releaseDate)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -1433,6 +1457,22 @@ export function PlaylistArenaApp() {
                   {songsSection === "search" ? (
                     <div className="space-y-6">
                       {renderSongFilters()}
+                      <label className="flex flex-wrap items-center gap-3">
+                        <span className="section-title text-[11px] text-white/45">Ordenar por</span>
+                        <select
+                          value={songSortMode}
+                          onChange={(event) =>
+                            setSongSortMode(event.target.value as SongSortMode)
+                          }
+                          className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
+                        >
+                          <option value="added">Fecha anadida a la playlist</option>
+                          <option value="release">Fecha de salida de la cancion</option>
+                          <option value="alpha">Orden alfabetico</option>
+                          <option value="ranking">Ranking (mi nota)</option>
+                          <option value="ranking-global">Ranking global (media de todos)</option>
+                        </select>
+                      </label>
                       <div className="flex flex-wrap gap-3">
                         <button
                           type="button"

@@ -89,6 +89,30 @@ export function formatRating(value: number | null): string {
   return value.toFixed(1);
 }
 
+/**
+ * Formatea la fecha de lanzamiento mostrando dia y mes cuando Spotify los da.
+ * Spotify devuelve "YYYY-MM-DD", "YYYY-MM" o solo "YYYY" segun la precision.
+ */
+export function formatReleaseDateFull(releaseDate: string): string {
+  if (!releaseDate) {
+    return "Desconocida";
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) {
+    return formatDate(releaseDate);
+  }
+
+  if (/^\d{4}-\d{2}$/.test(releaseDate)) {
+    const parsed = new Date(`${releaseDate}-01T00:00:00`);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+    }
+  }
+
+  return releaseDate.slice(0, 4);
+}
+
 export function getReleaseYear(releaseDate: string): string {
   if (!releaseDate) {
     return "Desconocido";

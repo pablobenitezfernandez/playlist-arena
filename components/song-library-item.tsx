@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { PlaylistSong } from "@/lib/types";
-import { formatDate, formatDuration, formatRating } from "@/lib/utils";
+import { formatDate, formatDuration, formatRating, formatReleaseDateFull } from "@/lib/utils";
 
 type SongLibraryItemProps = {
   song: PlaylistSong;
@@ -109,7 +109,7 @@ export function SongLibraryItem({
 
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/48">
             <span>{song.album}</span>
-            <span>{song.releaseYear}</span>
+            <span>{formatReleaseDateFull(song.releaseDate)}</span>
             <span>{formatDuration(song.durationMs)}</span>
             <span>{song.tournamentWins} victorias</span>
           </div>
@@ -137,7 +137,7 @@ export function SongLibraryItem({
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Lanzamiento</p>
-              <p className="mt-1">{song.releaseDate || song.releaseYear}</p>
+              <p className="mt-1">{formatReleaseDateFull(song.releaseDate)}</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Duracion</p>
