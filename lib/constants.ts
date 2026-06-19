@@ -30,13 +30,20 @@ export const MODE_LABELS: Record<TournamentMode, string> = {
   battle: "2v2 / 4-way battle"
 };
 
+// Umbral (en años) que separa canciones "antiguas" de "nuevas" por lanzamiento.
+export const TOURNAMENT_AGE_THRESHOLD_YEARS = 6;
+
 export const STRATEGY_OPTIONS: Array<{
   value: TournamentSelectionStrategy;
   label: string;
 }> = [
   { value: "random", label: "Aleatorio" },
-  { value: "release-newest", label: "Mas nuevas por fecha de lanzamiento" },
-  { value: "release-oldest", label: "Mas antiguas por fecha de lanzamiento" },
-  { value: "added-newest", label: "Mas nuevas anadidas a la playlist" },
-  { value: "added-oldest", label: "Mas antiguas anadidas a la playlist" }
+  {
+    value: "release-newest",
+    label: `Nuevas (ultimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos), al azar`
+  },
+  {
+    value: "release-oldest",
+    label: `Antiguas (mas de ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos), al azar`
+  }
 ];

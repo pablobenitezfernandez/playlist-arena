@@ -12,9 +12,20 @@ import type {
 } from "@/lib/types";
 
 function normalizeTournamentSelectionStrategy(
-  strategy: TournamentState["selectionStrategy"] | "popularity-most" | "popularity-least"
+  strategy:
+    | TournamentState["selectionStrategy"]
+    | "popularity-most"
+    | "popularity-least"
+    | "added-newest"
+    | "added-oldest"
 ): TournamentState["selectionStrategy"] {
-  if (strategy === "popularity-most" || strategy === "popularity-least") {
+  // Estrategias antiguas ya retiradas: las tratamos como aleatorias.
+  if (
+    strategy === "popularity-most" ||
+    strategy === "popularity-least" ||
+    strategy === "added-newest" ||
+    strategy === "added-oldest"
+  ) {
     return "random";
   }
 

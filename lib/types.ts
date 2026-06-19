@@ -65,9 +65,7 @@ export type TournamentMode = "duel" | "battle";
 export type TournamentSelectionStrategy =
   | "random"
   | "release-newest"
-  | "release-oldest"
-  | "added-newest"
-  | "added-oldest";
+  | "release-oldest";
 
 export type TournamentMatch = {
   id: string;

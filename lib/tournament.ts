@@ -1,4 +1,4 @@
-import { TOURNAMENT_SIZE_OPTIONS } from "@/lib/constants";
+import { TOURNAMENT_AGE_THRESHOLD_YEARS, TOURNAMENT_SIZE_OPTIONS } from "@/lib/constants";
 import type {
   ImportedPlaylist,
   PlaylistSong,
@@ -12,49 +12,58 @@ import type {
 } from "@/lib/types";
 import { chunkArray, parseReleaseDate, shuffleArray } from "@/lib/utils";
 
-function compareText(a: string, b: string): number {
-  return a.localeCompare(b, undefined, { sensitivity: "base" });
+// Fecha límite: hace TOURNAMENT_AGE_THRESHOLD_YEARS años desde hoy.
+function ageCutoffMs(): number {
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - TOURNAMENT_AGE_THRESHOLD_YEARS);
+  return cutoff.getTime();
 }
 
-function parseSortableDate(value: string): number {
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function sortSongs(
+/**
+ * Elige las canciones que entran al torneo segun la estrategia:
+ * - "random": cualquiera, mezcladas al azar.
+ * - "release-oldest": solo las de hace MÁS de N años; mezcladas al azar
+ *   (cada torneo coge una selección y emparejamientos distintos).
+ * - "release-newest": solo las de los ÚLTIMOS N años; igual, al azar.
+ * Si no hay suficientes en el grupo para el tamaño pedido, lanza un error
+ * descriptivo para que la UI muestre el aviso.
+ */
+function selectSeedSongs(
   songs: PlaylistSong[],
-  strategy: TournamentSelectionStrategy
+  strategy: TournamentSelectionStrategy,
+  size: number
 ): PlaylistSong[] {
-  const copy = [...songs];
-
-  switch (strategy) {
-    case "random":
-      return shuffleArray(copy);
-    case "release-newest":
-      return copy.sort((a, b) => {
-        return (
-          parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate) ||
-          compareText(a.title, b.title)
-        );
-      });
-    case "release-oldest":
-      return copy.sort((a, b) => {
-        return (
-          parseReleaseDate(a.releaseDate) - parseReleaseDate(b.releaseDate) ||
-          compareText(a.title, b.title)
-        );
-      });
-    case "added-newest":
-      return copy.sort((a, b) => {
-        return parseSortableDate(b.addedAt) - parseSortableDate(a.addedAt) || compareText(a.title, b.title);
-      });
-    case "added-oldest":
-      return copy.sort((a, b) => {
-        return parseSortableDate(a.addedAt) - parseSortableDate(b.addedAt) || compareText(a.title, b.title);
-      });
-    default:
-      return copy;
+  if (strategy === "random") {
+    if (songs.length < size) {
+      throw new Error(
+        `No hay suficientes canciones para un torneo de ${size}. Tienes ${songs.length}. Baja la cantidad de canciones.`
+      );
+    }
+    return shuffleArray(songs).slice(0, size);
   }
+
+  const cutoff = ageCutoffMs();
+  const datedSongs = songs.filter(
+    (song) => song.releaseDate && parseReleaseDate(song.releaseDate) > 0
+  );
+
+  const pool =
+    strategy === "release-oldest"
+      ? datedSongs.filter((song) => parseReleaseDate(song.releaseDate) < cutoff)
+      : datedSongs.filter((song) => parseReleaseDate(song.releaseDate) >= cutoff);
+
+  if (pool.length < size) {
+    const label =
+      strategy === "release-oldest"
+        ? `de hace mas de ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos`
+        : `de los ultimos ${TOURNAMENT_AGE_THRESHOLD_YEARS} anos`;
+    throw new Error(
+      `Solo hay ${pool.length} canciones ${label} y el torneo necesita ${size}. Baja la cantidad de canciones o cambia la estrategia.`
+    );
+  }
+
+  // Mezcla aleatoria dentro del grupo -> el torneo no es siempre el mismo.
+  return shuffleArray(pool).slice(0, size);
 }
 
 function createRound(roundNumber: number, entrantIds: string[], groupSize: 2 | 4): TournamentRound {
@@ -85,11 +94,7 @@ export function createTournamentState(params: {
     throw new Error("El tamano seleccionado no es valido para este modo de torneo.");
   }
 
-  if (playlist.songs.length < size) {
-    throw new Error("No hay suficientes canciones para el tamano de torneo seleccionado.");
-  }
-
-  const seededSongs = sortSongs(playlist.songs, strategy).slice(0, size);
+  const seededSongs = selectSeedSongs(playlist.songs, strategy, size);
   const groupSize = mode === "duel" ? 2 : 4;
 
   if (seededSongs.length < groupSize) {

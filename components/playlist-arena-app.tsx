@@ -757,12 +757,14 @@ export function PlaylistArenaApp() {
         message: `${MODE_LABELS[mode]} creado con ${size} canciones.`
       });
     } catch (errorValue) {
-      setNotice({
-        tone: "error",
+      // Pantalla (modal) clara: normalmente es que no hay suficientes canciones
+      // del grupo elegido para ese tamaño de torneo.
+      setErrorDialog({
+        title: "No se puede crear el torneo",
         message:
           errorValue instanceof Error
             ? errorValue.message
-            : "No se pudo crear el torneo."
+            : "No se pudo crear el torneo con las canciones actuales."
       });
     } finally {
       setBusyAction(null);
