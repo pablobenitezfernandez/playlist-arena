@@ -25,7 +25,9 @@ export function getSupabaseClient(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false
+      // true para que funcione el enlace de recuperar contraseña / confirmar email
+      // (Supabase pone el token en el # de la URL al volver del correo).
+      detectSessionInUrl: true
     }
   });
 

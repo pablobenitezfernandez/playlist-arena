@@ -26,6 +26,8 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -113,6 +115,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    const supabase = getSupabaseClient();
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/reset` : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+    if (error) {
+      throw new Error(translateAuthError(error.message));
+    }
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      throw new Error(translateAuthError(error.message));
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       loading,
@@ -122,9 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isOwner: profile?.is_owner ?? false,
       signIn,
       signUp,
-      signOut
+      signOut,
+      resetPassword,
+      updatePassword
     }),
-    [loading, session, profile, signIn, signUp, signOut]
+    [loading, session, profile, signIn, signUp, signOut, resetPassword, updatePassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

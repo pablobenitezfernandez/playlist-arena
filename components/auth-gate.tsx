@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading, session } = useAuth();
@@ -50,7 +50,7 @@ function AccountBar() {
 }
 
 function AuthScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,13 +68,19 @@ function AuthScreen() {
     try {
       if (mode === "signin") {
         await signIn(email.trim(), password);
+      } else if (mode === "forgot") {
+        await resetPassword(email.trim());
+        setInfo(
+          "Si existe una cuenta con ese email, te hemos enviado un enlace para poner una contraseña nueva. Revisa tu correo (y la carpeta de spam)."
+        );
+        setMode("signin");
       } else {
         if (displayName.trim().length < 2) {
           throw new Error("Pon un nombre de al menos 2 caracteres.");
         }
         await signUp(email.trim(), password, displayName.trim());
         setInfo(
-          "Cuenta creada. Si te pide confirmar el email, revisa tu correo; si no, ya puedes iniciar sesión."
+          "Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión."
         );
         setMode("signin");
       }
@@ -90,11 +96,17 @@ function AuthScreen() {
       <div className="glass-panel w-full max-w-sm rounded-[28px] p-7">
         <p className="section-title text-xs text-glowSoft">Playlist Arena</p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-white">
-          {mode === "signin" ? "Iniciar sesión" : "Crear cuenta"}
+          {mode === "signin"
+            ? "Iniciar sesión"
+            : mode === "forgot"
+            ? "Recuperar contraseña"
+            : "Crear cuenta"}
         </h1>
         <p className="mt-2 text-sm text-white/55">
           {mode === "signin"
             ? "Entra con tu email y contraseña para puntuar y ver el ranking de todos."
+            : mode === "forgot"
+            ? "Pon tu email y te enviaremos un enlace para crear una contraseña nueva."
             : "Regístrate para empezar a puntuar canciones."}
         </p>
 
@@ -120,16 +132,18 @@ function AuthScreen() {
             className="w-full rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-glow/50"
           />
 
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Contraseña"
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            required
-            minLength={6}
-            className="w-full rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-glow/50"
-          />
+          {mode !== "forgot" ? (
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Contraseña"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              required
+              minLength={6}
+              className="w-full rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-glow/50"
+            />
+          ) : null}
 
           {error ? (
             <p className="rounded-xl border border-rose/40 bg-rose/10 px-3 py-2 text-xs text-rose">
@@ -152,9 +166,25 @@ function AuthScreen() {
               ? "Un momento…"
               : mode === "signin"
               ? "Entrar"
+              : mode === "forgot"
+              ? "Enviar enlace"
               : "Crear cuenta"}
           </button>
         </form>
+
+        {mode === "signin" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMode("forgot");
+              setError(null);
+              setInfo(null);
+            }}
+            className="mt-3 w-full text-center text-xs text-white/45 underline transition hover:text-white/75"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -167,6 +197,8 @@ function AuthScreen() {
         >
           {mode === "signin"
             ? "¿No tienes cuenta? Crea una"
+            : mode === "forgot"
+            ? "← Volver a iniciar sesión"
             : "¿Ya tienes cuenta? Inicia sesión"}
         </button>
       </div>
