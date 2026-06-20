@@ -104,6 +104,45 @@ Esto es cuando cambia el **código** (no los datos). Normalmente lo hacemos junt
 
 ---
 
+## 9. Rollback (volver atrás si un cambio sale mal)
+
+Si publicas algo y la web empieza a fallar, hay dos formas de volver al estado bueno anterior. **Siempre antes de publicar algo arriesgado, creamos un punto de respaldo** (un "tag" y una rama en git que apuntan a la versión que funcionaba).
+
+### Punto de respaldo actual
+- **Tag**: `estable-pre-preview`
+- **Rama**: `respaldo-pre-preview`
+- Apuntan a la producción estable de antes del preview de Spotify.
+
+### Método 1 — Vercel (rápido, recomendado, sin git)
+Es lo más fácil y es **instantáneo**:
+1. Entra en **vercel.com** → tu proyecto → pestaña **Deployments**.
+2. Busca el último deploy que funcionaba bien (los de antes salen con su fecha).
+3. En su menú **⋯** → **Promote to Production** (o **Rollback**).
+4. En segundos, la web vuelve a esa versión. (Esto no toca el código en GitHub, solo lo que se sirve.)
+
+### Método 2 — git (volver el código al punto de respaldo)
+Si quieres que el **código** vuelva al punto estable (en la terminal, dentro de `torneo`):
+```
+git checkout main
+git reset --hard estable-pre-preview
+git push origin main --force
+```
+Vercel detecta el push y redespliega ese estado estable. El trabajo nuevo no se pierde: sigue guardado en su rama (p. ej. `preview-spotify`), listo para arreglarlo y volver a intentarlo.
+
+> ⚠️ El `--force` reescribe la rama `main`. Úsalo solo para esto (rollback) y solo si el Método 1 no te vale. Si dudas, usa siempre el Método 1 (Vercel).
+
+### Crear un punto de respaldo nuevo (para la próxima vez)
+Antes de publicar algo arriesgado, estando en `main` actualizado:
+```
+git tag -a respaldo-AAAA-MM-DD -m "Estable antes de X"
+git branch respaldo-AAAA-MM-DD-rama
+git push origin respaldo-AAAA-MM-DD
+git push origin respaldo-AAAA-MM-DD-rama
+```
+(Cambia `AAAA-MM-DD` por la fecha.) Así siempre tienes a dónde volver.
+
+---
+
 ## Resumen de 30 segundos
 
 - **Usar la app** → web: `https://playlist-arena.vercel.app` (siempre encendida).
