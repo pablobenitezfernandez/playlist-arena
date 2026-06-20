@@ -202,6 +202,31 @@ export async function deleteRatingFromDb(
 }
 
 /**
+ * Suma de victorias de torneo por canción en los últimos `days` días (de toda
+ * la gente). Sirve para el "top semanal por victorias" del dashboard.
+ * Devuelve un mapa entryId -> victorias en la ventana.
+ */
+export async function fetchRecentTournamentWins(days = 7): Promise<Map<string, number>> {
+  const supabase = getSupabaseClient();
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("tournament_song_wins")
+    .select("song_entry_id, wins")
+    .gte("created_at", since);
+
+  if (error) {
+    throw new Error(`No se pudieron leer las victorias recientes: ${error.message}`);
+  }
+
+  const map = new Map<string, number>();
+  for (const row of (data ?? []) as Array<{ song_entry_id: string; wins: number }>) {
+    map.set(row.song_entry_id, (map.get(row.song_entry_id) ?? 0) + Number(row.wins));
+  }
+  return map;
+}
+
+/**
  * (Solo dueño) Vuelca la playlist sincronizada de Spotify a la base de datos
  * compartida: canciones + metadatos. Las politicas RLS rechazan esta operacion
  * si quien la ejecuta no es dueño.

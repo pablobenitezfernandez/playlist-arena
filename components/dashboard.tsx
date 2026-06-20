@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { tournamentArchiveStorage, tournamentStorage } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
-import { fetchSharedPlaylist } from "@/lib/db";
+import { fetchSharedPlaylist, fetchRecentTournamentWins } from "@/lib/db";
 import type {
   ImportedPlaylist,
   TournamentArchiveEntry,
@@ -130,6 +130,7 @@ export function Dashboard() {
   const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
   const [archive, setArchive] = useState<TournamentArchiveEntry[]>([]);
   const [activeTournament, setActiveTournament] = useState<TournamentState | null>(null);
+  const [weeklyWins, setWeeklyWins] = useState<Map<string, number>>(new Map());
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -142,6 +143,15 @@ export function Dashboard() {
     // Torneo e historial siguen siendo locales por persona.
     setArchive(tournamentArchiveStorage.read());
     setActiveTournament(tournamentStorage.read());
+
+    // Victorias de la última semana (de todos) para el top semanal.
+    fetchRecentTournamentWins(7)
+      .then((wins) => {
+        if (active) {
+          setWeeklyWins(wins);
+        }
+      })
+      .catch(() => {});
 
     // La playlist y las notas (personal + media) vienen de la base de datos.
     fetchSharedPlaylist(userId)
@@ -262,6 +272,18 @@ export function Dashboard() {
     .sort((a, b) => b.tournamentWins - a.tournamentWins)
     .slice(0, 10);
 
+  // Top de la semana: canciones con más victorias de torneo en los últimos 7 días.
+  const weeklyTop = songs
+    .map((s) => ({ song: s, wins: weeklyWins.get(s.entryId) ?? 0 }))
+    .filter((x) => x.wins > 0)
+    .sort(
+      (a, b) =>
+        b.wins - a.wins ||
+        (b.song.communityRating ?? -1) - (a.song.communityRating ?? -1) ||
+        (b.song.userRating ?? -1) - (a.song.userRating ?? -1)
+    )
+    .slice(0, 10);
+
   // Tournament stats
   const totalTournaments = archive.length;
   const duels = archive.filter((t) => t.mode === "duel").length;
@@ -356,6 +378,49 @@ export function Dashboard() {
           }
           accent="#1ed760"
         />
+      </div>
+
+      {/* ── Top de la semana por victorias ── */}
+      <div className="glass-panel rounded-xl p-5">
+        <SectionTitle>Top de la semana · por victorias</SectionTitle>
+        <p className="text-xs mb-3" style={{ color: "rgba(242,255,247,0.4)" }}>
+          Canciones con más victorias en torneos de todos en los últimos 7 días.
+        </p>
+        {weeklyTop.length === 0 ? (
+          <p className="text-sm" style={{ color: "rgba(242,255,247,0.4)" }}>
+            Esta semana todavía no hay victorias de torneo.
+          </p>
+        ) : (
+          <ol className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            {weeklyTop.map(({ song, wins }, i) => (
+              <li key={song.entryId} className="flex items-center gap-3 min-w-0">
+                <span
+                  className="w-5 text-right text-xs shrink-0 tabular-nums"
+                  style={{ color: "rgba(242,255,247,0.35)" }}
+                >
+                  {i + 1}
+                </span>
+                {song.coverUrl && (
+                  <img src={song.coverUrl} alt="" className="w-8 h-8 rounded shrink-0 object-cover" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate font-medium">{song.title}</p>
+                  <p className="text-xs truncate" style={{ color: "rgba(242,255,247,0.45)" }}>
+                    {song.artists.join(", ")}
+                  </p>
+                </div>
+                <span className="text-right shrink-0">
+                  <span className="text-sm font-bold tabular-nums" style={{ color: "#f2a65a" }}>
+                    {wins}
+                  </span>
+                  <span className="text-xs ml-1" style={{ color: "rgba(242,255,247,0.4)" }}>
+                    {wins === 1 ? "victoria" : "victorias"}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
 
       {/* ── Active tournament ── */}
