@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { SpotifyEmbed } from "@/components/spotify-embed";
 import type { PlaylistSong } from "@/lib/types";
 import { formatRating, parseRatingInput, sanitizeRatingInput } from "@/lib/utils";
 
@@ -111,9 +112,16 @@ export function SongRatingFlow({
           </div>
 
           <p className="text-sm leading-6 text-white/62">
-            Introduce una nota de `0.0` a `10.0`. Al guardar, la app te llevara automaticamente a
-            la siguiente cancion sin puntuar.
+            Introduce una nota de `0.0` a `10.0`. Al guardar, la app te llevará automáticamente a
+            la siguiente canción sin puntuar.
           </p>
+
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Preview</p>
+            <div className="mt-2 max-w-md">
+              <SpotifyEmbed trackId={currentSong.id} />
+            </div>
+          </div>
 
           <label className="block max-w-xs">
             <span className="text-[11px] uppercase tracking-[0.2em] text-white/38">Nota</span>

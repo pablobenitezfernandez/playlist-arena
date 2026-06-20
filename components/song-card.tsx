@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { SpotifyEmbed } from "@/components/spotify-embed";
 import type { PlaylistSong } from "@/lib/types";
 import { formatReleaseDateFull } from "@/lib/utils";
 
@@ -58,6 +59,8 @@ export function SongCard({ song, onSelect, accentLabel }: SongCardProps) {
           </dl>
         </div>
       </button>
+
+      <SpotifyEmbed trackId={song.id} compact />
 
       {song.spotifyUrl ? (
         <a
