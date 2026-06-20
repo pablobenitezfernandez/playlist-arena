@@ -88,25 +88,27 @@ export function ArtistsSection({
 
   const artists = useMemo(() => buildArtists(songs), [songs]);
 
-  const normalizedSearch = search.trim().toLowerCase();
-  const filtered = artists.filter(
-    (a) => !normalizedSearch || a.name.toLowerCase().includes(normalizedSearch)
-  );
+  const sorted = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const filtered = artists.filter(
+      (a) => !normalizedSearch || a.name.toLowerCase().includes(normalizedSearch)
+    );
 
-  const sorted = [...filtered].sort((a, b) => {
-    const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    return [...filtered].sort((a, b) => {
+      const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 
-    if (sort === "alpha") {
-      return byName;
-    }
-    if (sort === "songs") {
-      return b.songs.length - a.songs.length || byName;
-    }
+      if (sort === "alpha") {
+        return byName;
+      }
+      if (sort === "songs") {
+        return b.songs.length - a.songs.length || byName;
+      }
 
-    const av = sort === "community" ? a.communityAvg : a.personalAvg;
-    const bv = sort === "community" ? b.communityAvg : b.personalAvg;
-    return compareNullableDesc(av, bv) || byName;
-  });
+      const av = sort === "community" ? a.communityAvg : a.personalAvg;
+      const bv = sort === "community" ? b.communityAvg : b.personalAvg;
+      return compareNullableDesc(av, bv) || byName;
+    });
+  }, [artists, search, sort]);
 
   return (
     <section className="space-y-6">

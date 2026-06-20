@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { SpotifyEmbed } from "@/components/spotify-embed";
 import type { PlaylistSong } from "@/lib/types";
 import {
@@ -22,7 +22,7 @@ type SongLibraryItemProps = {
   onDeleteArchived?: (entryId: string) => void;
 };
 
-export function SongLibraryItem({
+function SongLibraryItemImpl({
   song,
   expanded,
   onToggle,
@@ -238,3 +238,12 @@ export function SongLibraryItem({
     </article>
   );
 }
+
+// Memoizado: una tarjeta solo se vuelve a pintar si SU canción cambia o si se
+// abre/cierra. Así, al escribir o filtrar, no se repintan las cientos de tarjetas
+// que no han cambiado. (Los handlers son seguros aunque queden "viejos": usan
+// setState funcional, así que no hace falta comparar las funciones.)
+export const SongLibraryItem = memo(
+  SongLibraryItemImpl,
+  (prev, next) => prev.song === next.song && prev.expanded === next.expanded
+);

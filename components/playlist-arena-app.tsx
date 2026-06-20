@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArtistsSection } from "@/components/artists-section";
 import { SongCard } from "@/components/song-card";
 import { SongLibraryItem } from "@/components/song-library-item";
@@ -479,21 +479,22 @@ export function PlaylistArenaApp() {
   }
 
   function updateSong(entryId: string, updater: (song: PlaylistSong) => PlaylistSong) {
-    if (!playlist) {
-      return;
-    }
+    setPlaylist((current) => {
+      if (!current) {
+        return current;
+      }
 
-    const nextSongs = playlist.songs.map((song) =>
-      song.entryId === entryId ? updater(song) : song
-    );
-    const nextPlaylist: ImportedPlaylist = {
-      ...playlist,
-      songs: nextSongs,
-      totalSongs: nextSongs.length,
-      totalDurationMs: nextSongs.reduce((sum, song) => sum + song.durationMs, 0)
-    };
+      const nextSongs = current.songs.map((song) =>
+        song.entryId === entryId ? updater(song) : song
+      );
 
-    persistPlaylist(nextPlaylist);
+      return {
+        ...current,
+        songs: nextSongs,
+        totalSongs: nextSongs.length,
+        totalDurationMs: nextSongs.reduce((sum, song) => sum + song.durationMs, 0)
+      };
+    });
   }
 
   function resetSongFilters() {
@@ -705,15 +706,20 @@ export function PlaylistArenaApp() {
       return;
     }
 
-    const nextSongs = playlist.songs.filter((song) => song.entryId !== entryId);
-    const nextPlaylist: ImportedPlaylist = {
-      ...playlist,
-      songs: nextSongs,
-      totalSongs: nextSongs.length,
-      totalDurationMs: nextSongs.reduce((sum, song) => sum + song.durationMs, 0)
-    };
+    setPlaylist((current) => {
+      if (!current) {
+        return current;
+      }
 
-    persistPlaylist(nextPlaylist);
+      const nextSongs = current.songs.filter((song) => song.entryId !== entryId);
+
+      return {
+        ...current,
+        songs: nextSongs,
+        totalSongs: nextSongs.length,
+        totalDurationMs: nextSongs.reduce((sum, song) => sum + song.durationMs, 0)
+      };
+    });
     setExpandedSongId((current) => (current === entryId ? null : current));
 
     if (tournamentReferencesSong(tournament, entryId)) {
@@ -950,11 +956,15 @@ export function PlaylistArenaApp() {
   const latestSyncSongs = (latestSync?.addedSongs ?? []).map(
     (song) => getSongById(playlist, song.entryId) ?? song
   );
-  const duplicateGroups = buildDuplicateGroups(allSongs);
+  const duplicateGroups = useMemo(() => buildDuplicateGroups(allSongs), [allSongs]);
   // Novedades: las 10 canciones publicadas mas recientemente (por fecha de lanzamiento).
-  const newReleases = [...allSongs]
-    .sort((a, b) => parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate))
-    .slice(0, 10);
+  const newReleases = useMemo(
+    () =>
+      [...allSongs]
+        .sort((a, b) => parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate))
+        .slice(0, 10),
+    [allSongs]
+  );
   const availableSongs = allSongs.length;
   const ratedSongsCount = allSongs.filter((song) => song.userRating !== null).length;
   const removedSongsCount = allSongs.filter((song) => !song.isInActivePlaylist).length;
@@ -974,54 +984,65 @@ export function PlaylistArenaApp() {
     songsSection === "ranking"
       ? rankingOrder === "community"
       : songSortMode === "ranking-global";
-  const ratingForFilter = (song: PlaylistSong) =>
-    filterByCommunityRating ? song.communityRating : song.userRating;
 
-  const filteredSongs = allSongs.filter((song) => {
-    const matchesSearch =
-      !normalizedSongSearch ||
-      [song.title, song.artists.join(" "), song.album, song.releaseYear]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSongSearch);
+  const filteredSongs = useMemo(
+    () =>
+      allSongs.filter((song) => {
+        const matchesSearch =
+          !normalizedSongSearch ||
+          [song.title, song.artists.join(" "), song.album, song.releaseYear]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedSongSearch);
 
-    const matchesRatingMode =
-      ratingFilterMode === "all" ||
-      (ratingFilterMode === "rated" && song.userRating !== null) ||
-      (ratingFilterMode === "unrated" && song.userRating === null);
+        const matchesRatingMode =
+          ratingFilterMode === "all" ||
+          (ratingFilterMode === "rated" && song.userRating !== null) ||
+          (ratingFilterMode === "unrated" && song.userRating === null);
 
-    const ratingValue = ratingForFilter(song);
+        const ratingValue = filterByCommunityRating ? song.communityRating : song.userRating;
 
-    const matchesMinRating =
-      parsedMinRating === null ||
-      (ratingValue !== null && ratingValue >= parsedMinRating);
+        const matchesMinRating =
+          parsedMinRating === null ||
+          (ratingValue !== null && ratingValue >= parsedMinRating);
 
-    const matchesMaxRating =
-      parsedMaxRating === null ||
-      (ratingValue !== null && ratingValue <= parsedMaxRating);
+        const matchesMaxRating =
+          parsedMaxRating === null ||
+          (ratingValue !== null && ratingValue <= parsedMaxRating);
 
-    return (
-      matchesSearch && matchesRatingMode && matchesMinRating && matchesMaxRating
-    );
-  });
+        return matchesSearch && matchesRatingMode && matchesMinRating && matchesMaxRating;
+      }),
+    [
+      allSongs,
+      normalizedSongSearch,
+      ratingFilterMode,
+      parsedMinRating,
+      parsedMaxRating,
+      filterByCommunityRating
+    ]
+  );
 
-  const songSortComparators: Record<
-    SongSortMode,
-    (a: PlaylistSong, b: PlaylistSong) => number
-  > = {
-    alpha: compareSongsAlphabetically,
-    ranking: compareSongsByRanking,
-    "ranking-global": compareSongsByCommunityRanking,
-    added: (a, b) =>
-      (Date.parse(b.addedAt) || 0) - (Date.parse(a.addedAt) || 0) ||
-      compareSongsAlphabetically(a, b),
-    release: (a, b) =>
-      parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate) ||
-      compareSongsAlphabetically(a, b)
-  };
-  const searchSongs = [...filteredSongs].sort(songSortComparators[songSortMode]);
-  const rankingSongs = [...filteredSongs].sort(
-    rankingOrder === "community" ? compareSongsByCommunityRanking : compareSongsByRanking
+  const searchSongs = useMemo(() => {
+    const comparators: Record<SongSortMode, (a: PlaylistSong, b: PlaylistSong) => number> = {
+      alpha: compareSongsAlphabetically,
+      ranking: compareSongsByRanking,
+      "ranking-global": compareSongsByCommunityRanking,
+      added: (a, b) =>
+        (Date.parse(b.addedAt) || 0) - (Date.parse(a.addedAt) || 0) ||
+        compareSongsAlphabetically(a, b),
+      release: (a, b) =>
+        parseReleaseDate(b.releaseDate) - parseReleaseDate(a.releaseDate) ||
+        compareSongsAlphabetically(a, b)
+    };
+    return [...filteredSongs].sort(comparators[songSortMode]);
+  }, [filteredSongs, songSortMode]);
+
+  const rankingSongs = useMemo(
+    () =>
+      [...filteredSongs].sort(
+        rankingOrder === "community" ? compareSongsByCommunityRanking : compareSongsByRanking
+      ),
+    [filteredSongs, rankingOrder]
   );
   const sizeOptions = TOURNAMENT_SIZE_OPTIONS[mode];
   const currentRound = tournament ? getCurrentRound(tournament) : undefined;
