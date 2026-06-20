@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { SpotifyEmbed } from "@/components/spotify-embed";
 import type { PlaylistSong } from "@/lib/types";
 import {
   formatDate,
@@ -160,6 +161,13 @@ export function SongLibraryItem({
               <p className="mt-1">
                 {song.isInActivePlaylist ? "Sigue en la playlist" : "Ya no esta en la playlist"}
               </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Preview</p>
+            <div className="mt-2">
+              <SpotifyEmbed trackId={song.id} />
             </div>
           </div>
 
