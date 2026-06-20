@@ -1359,21 +1359,32 @@ export function PlaylistArenaApp() {
                   key={song.entryId}
                   className="rounded-[20px] border border-white/10 bg-white/5 p-3"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden rounded-[14px] bg-white/5">
+                  <a
+                    href={song.spotifyUrl || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Abrir en Spotify"
+                    className="group relative block aspect-square w-full overflow-hidden rounded-[14px] bg-white/5"
+                  >
                     {song.coverUrl ? (
                       <Image
                         src={song.coverUrl}
                         alt={`${song.title} cover`}
                         fill
                         sizes="160px"
-                        className="object-cover"
+                        className="object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-xs text-white/40">
                         Sin portada
                       </div>
                     )}
-                  </div>
+                    <span className="absolute inset-0 flex items-center justify-center opacity-0 transition duration-300 group-hover:opacity-100">
+                      <span className="rounded-full bg-glow/90 px-3 py-1 text-xs font-semibold text-[#06210f]">
+                        ▶ Spotify
+                      </span>
+                    </span>
+                  </a>
                   <p className="mt-2 truncate text-sm font-semibold text-white">{song.title}</p>
                   <p className="truncate text-xs text-white/55">{song.artists.join(", ")}</p>
                   <p className="mt-1 text-xs text-glowSoft">

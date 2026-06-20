@@ -119,7 +119,7 @@ export function SongRatingFlow({
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Preview</p>
             <div className="mt-2 max-w-md">
-              <SpotifyEmbed trackId={currentSong.id} />
+              <SpotifyEmbed trackId={currentSong.id} compact />
             </div>
           </div>
 
