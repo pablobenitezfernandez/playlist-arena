@@ -1,283 +1,78 @@
-# Seguimiento de Codigo
+# Seguimiento de Código
 
-## Objetivo de este documento
+Registro técnico del proyecto: arquitectura, mapa de archivos y estado. Complementa a [FUNCIONALIDAD.md](FUNCIONALIDAD.md) (qué hace) con el "dónde y cómo está hecho".
 
-Este archivo sirve como registro tecnico del proyecto.
+## Arquitectura
 
-Su funcion es explicar:
+- **Frontend**: Next.js 15 (App Router) + React 19 + TypeScript + Tailwind. App casi 100% en componentes cliente.
+- **Backend / datos**: **Supabase** (Postgres + Auth + Realtime). Sin servidor propio: el navegador habla directo con Supabase usando la `anon key`, protegido por **RLS**.
+- **Auth**: email/contraseña (Supabase Auth). El dueño además usa OAuth PKCE de Spotify para sincronizar.
+- **Hosting**: Vercel (rama `main` → deploy automático).
 
-- que partes estan implementadas
-- en que archivos vive cada bloque de funcionalidad
-- como se relaciona el codigo con `FUNCIONALIDAD.md`
-- que puntos estan cerrados y cuales siguen pendientes
+## Base de datos (Supabase)
 
-## Relacion con FUNCIONALIDAD.md
+Esquema en [`supabase/schema.sql`](supabase/schema.sql) (idempotente). Tablas:
 
-`FUNCIONALIDAD.md` define el comportamiento funcional de la app:
+- `profiles` — perfil por usuario (`display_name`, `is_owner`). Se crea solo al registrarse (trigger). `is_owner` está protegido para que nadie se autoascienda (trigger `protect_is_owner`).
+- `songs` — la playlist compartida (una copia para todos). Solo el dueño escribe (RLS).
+- `ratings` — nota de cada persona por canción. Todos leen (para la media); cada uno solo edita las suyas.
+- `tournament_song_wins` — victorias de torneo por persona/canción. Todos leen (desempate global).
+- `playlist_meta` — datos generales de la playlist (1 fila).
 
-- que puede hacer el usuario
-- que reglas sigue la app
-- como deberia comportarse cada modulo
-
-`SEGUIMIENTO_CODIGO.md` complementa eso con la parte tecnica:
-
-- donde esta implementado cada comportamiento
-- que archivos participan
-- estado actual del desarrollo
-
-Resumen rapido:
-
-- `FUNCIONALIDAD.md` = que hace la app
-- `SEGUIMIENTO_CODIGO.md` = donde y como esta hecho en codigo
-
-## Estado actual
-
-Revision tecnica preparada el `2026-06-17`.
-
-Estado general:
-
-- base de la app montada
-- flujo principal funcional y validado con `npm run lint` y `npm run build`
-- documentacion funcional creada
-- entorno local preparado con Node.js y npm
+RLS en todas. Realtime activado en `ratings` y `tournament_song_wins`.
 
 ## Mapa de archivos
 
-### Entrada de la app
-
-- `app/page.tsx`
-  - monta la home principal
-- `app/callback/page.tsx`
-  - monta la ruta del callback de Spotify
-
-### Lanzador local
-
-- `Abrir Playlist Arena.bat`
-  - arranca la app en Windows con doble clic
-  - anade temporalmente `C:\Program Files\nodejs` al `PATH`
-  - instala dependencias si falta `node_modules`
-  - abre `http://127.0.0.1:3000`
-  - mantiene el servidor vivo hasta cerrar con `Ctrl+C`
-
-### Componentes principales
-
-- `components/playlist-arena-app.tsx`
-  - componente central de toda la interfaz
-  - controla navegacion interna entre `Canciones`, `Torneo` y `Actualizar datos`
-  - gestiona estado local, filtros, sincronizacion, ranking y torneo
-
-- `components/song-library-item.tsx`
-  - tarjeta desplegable de cada cancion
-  - muestra metadatos
-  - permite poner o quitar nota
-  - muestra estado `Fuera de playlist`
-  - permite borrado manual de canciones archivadas
-
-- `components/song-rating-flow.tsx`
-  - flujo rapido de `Anadir puntuacion`
-  - avanza cancion a cancion entre las no puntuadas
-
-- `components/song-card.tsx`
-  - tarjeta visual para enfrentamientos del torneo
-
-- `components/spotify-callback-page.tsx`
-  - resuelve el callback OAuth PKCE
-  - guarda la sesion
-  - envia errores al popup de la home
-
-### Logica y datos
-
-- `lib/spotify.ts`
-  - login OAuth PKCE
-  - refresh token
-  - llamadas a Spotify
-  - paginacion de canciones con `/playlists/{playlist_id}/items`
-  - compatibilidad con el campo nuevo `item` y el legado `track`
-  - merge de canciones nuevas sin perder datos locales
-  - bloqueo de playlist unica
-
-- `lib/storage.ts`
-  - lectura y escritura en `localStorage`
-  - normalizacion de datos antiguos
-  - persistencia de playlist, torneo, historial de actualizaciones e historial de torneos
-
-- `lib/tournament.ts`
-  - creacion del torneo
-  - avance de rondas
-  - historial de enfrentamientos
-  - progreso y reinicio
-  - consolidacion de resultados al terminar
-  - construccion del archivo historico de torneos
-
-- `lib/types.ts`
-  - tipos globales del dominio
-  - canciones, playlist, historial de sync y torneo
-
-- `lib/constants.ts`
-  - claves de almacenamiento
-  - etiquetas
-  - tamanos y estrategias de torneo
-
-- `lib/utils.ts`
-  - helpers de fecha, duracion, rating y parseos auxiliares
-
-## Estado por bloques funcionales
-
-### 1. Libreria de canciones
-
-Estado: `Implementado`
-
-Cubierto en:
-
-- `components/playlist-arena-app.tsx`
-- `components/song-library-item.tsx`
-- `components/song-rating-flow.tsx`
-
-Incluye:
-
-- busqueda
-- filtros
-- ranking
-- historial de ultima actualizacion
-- deteccion de repetidas
-- puntuacion manual
-
-### 2. Persistencia local
-
-Estado: `Implementado`
-
-Cubierto en:
-
-- `lib/storage.ts`
-- `lib/types.ts`
-
-Incluye:
-
-- playlist guardada
-- canciones guardadas
-- notas persistentes
-- victorias persistentes
-- torneo persistente
-- historial de actualizaciones persistente
-- historial de torneos persistente
-
-### 3. Sincronizacion con Spotify
-
-Estado: `Implementado a nivel de codigo`
-
-Cubierto en:
-
-- `lib/spotify.ts`
-- `components/playlist-arena-app.tsx`
-- `components/spotify-callback-page.tsx`
-
-Incluye:
-
-- OAuth PKCE
-- import inicial
-- actualizacion manual
-- paginacion de canciones
-- merge sin borrado automatico
-- popup de error
-
-### 4. Regla de playlist unica
-
-Estado: `Implementado`
-
-Cubierto en:
-
-- `lib/spotify.ts`
-- `components/playlist-arena-app.tsx`
-
-Comportamiento:
-
-- bloquea reemplazo automatico por otra playlist distinta
-- conserva la libreria local existente
-
-### 5. Torneo
-
-Estado: `Implementado`
-
-Cubierto en:
-
-- `lib/tournament.ts`
-- `components/playlist-arena-app.tsx`
-- `components/song-card.tsx`
-
-Incluye:
-
-- `1v1`
-- `2v2 / 4-way battle`
-- progreso guardado
-- campeona
-- historial
-- victorias internas acumuladas solo al finalizar
-- historial de torneos completados con top 3
-
-## Modelo de datos importante
-
-Campos destacados por cancion:
-
-- `userRating`
-- `isInActivePlaylist`
-- `tournamentWins`
-
-Uso de cada uno:
-
-- `userRating`
-  - nota personal de la cancion
-- `isInActivePlaylist`
-  - indica si la cancion sigue estando en la playlist actual de Spotify
-- `tournamentWins`
-  - contador permanente usado para desempates del ranking
-
-## Registros tecnicos actuales
-
-### Registro 2026-06-17
-
-Cambios principales presentes en el codigo:
-
-- separacion de `Canciones` en 4 subapartados
-- historial de actualizaciones persistente
-- filtro por puntuadas y no puntuadas
-- filtro por nota minima y maxima
-- filtro por repetidas
-- filtro por ultima actualizacion
-- bloqueo de playlist unica
-- marcado de canciones fuera de playlist
-- borrado manual solo para canciones archivadas
-- victorias internas aplicadas solo al completar el torneo
-- historial de torneos completados con top 3, fecha, hora y especificaciones
-- popup de errores de Spotify
-- adaptacion a Spotify 2026: `127.0.0.1` como redirect, endpoint `/items`, y retirada de popularidad
-- migracion de torneos antiguos que usaban estrategias por popularidad hacia `Aleatorio`
-- migracion de `next lint` a ESLint CLI con `eslint.config.mjs`
-- lanzador Windows `Abrir Playlist Arena.bat`
-- exportacion JSON de datos locales y confirmacion escribiendo `BORRAR` antes de limpiar
-- build validado correctamente con Next 15
-- documentacion funcional y de uso actualizada
-
-## Pendientes detectados
-
-Pendiente tecnico inmediato:
-
-- probar una sincronizacion real completa con tu playlist desde el navegador
-- probar torneo completo en ambos modos con datos reales
-
-Pendiente funcional futuro:
-
-- ampliar estadisticas de ranking
-- mejorar exportaciones
-- seguir separando el componente principal en piezas mas pequenas
-
-## Como mantener este documento
-
-Cada vez que se toque una funcionalidad importante, conviene actualizar:
-
-1. `FUNCIONALIDAD.md` si cambia el comportamiento para el usuario
-2. `SEGUIMIENTO_CODIGO.md` si cambia la implementacion, el estado o el mapa de archivos
-
-Regla recomendada:
-
-- cambio funcional = actualiza ambos documentos
-- cambio solo tecnico = actualiza al menos `SEGUIMIENTO_CODIGO.md`
+### Rutas (`app/`)
+- `app/layout.tsx` — envuelve todo en `AuthProvider`.
+- `app/page.tsx` — `AuthGate` + `PlaylistArenaApp` (la app, protegida por login).
+- `app/dashboard/page.tsx` — dashboard.
+- `app/reset/page.tsx` — poner contraseña nueva tras el email de recuperación.
+- `app/callback/page.tsx` — callback OAuth de Spotify (solo dueño).
+
+### Componentes (`components/`)
+- `playlist-arena-app.tsx` — componente central (Canciones, Torneo, Administrar playlist). Filtros, orden, ranking, novedades, creación de torneo, sincronización.
+- `auth-gate.tsx` — pantalla de login/registro/recuperar y barra de cuenta; bloquea la app sin sesión.
+- `reset-password.tsx` — formulario de contraseña nueva.
+- `dashboard.tsx` — estadísticas (lee de la base de datos).
+- `song-library-item.tsx` — tarjeta desplegable de canción (tu nota + media + abrir en Spotify).
+- `song-rating-flow.tsx` — flujo "Añadir puntuación" (canción sin puntuar **al azar**).
+- `song-card.tsx` — tarjeta de canción en el torneo (con "Abrir en Spotify").
+- `spotify-callback-page.tsx` — resuelve el callback PKCE.
+
+### Lógica y datos (`lib/`)
+- `supabase.ts` — cliente de Supabase (sesión en localStorage, `detectSessionInUrl` para el enlace de recuperación).
+- `auth-context.tsx` — contexto de sesión: `signIn`, `signUp`, `signOut`, `resetPassword`, `updatePassword`, perfil, `isOwner`.
+- `db.ts` — capa de datos: `fetchSharedPlaylist` (canciones + tu nota + media + victorias globales), `saveRatingToDb`, `deleteRatingFromDb`, `saveTournamentWins`, `syncPlaylistToDb` (dueño), `deleteSongFromDb` (dueño).
+- `spotify.ts` — OAuth PKCE, refresh, paginación `/playlists/{id}/items`, merge sin borrado.
+- `storage.ts` — `localStorage` para lo que sigue siendo local (torneo actual, archivo de torneos, historial de sync). Normaliza estrategias antiguas → `random`.
+- `tournament.ts` — crear torneo (selección por edad **al azar**, con error si no hay suficientes), avanzar rondas, victorias, archivo.
+- `types.ts` — tipos del dominio (incluye `userRating`, `communityRating`, `communityRatingCount`, `tournamentWins`).
+- `constants.ts` — claves, tamaños y estrategias de torneo, `TOURNAMENT_AGE_THRESHOLD_YEARS`.
+- `utils.ts` — helpers de fecha/duración/rating (incluye `parseRatingInput`/`sanitizeRatingInput` para 1 decimal y `formatReleaseDateFull`).
+
+### Lanzador
+- `Abrir Playlist Arena.bat` — arranca el dev en `http://127.0.0.1:3000` en Windows. Solo necesario para tocar código (el uso diario es la web).
+
+## Estado por bloques
+
+| Bloque | Estado |
+|---|---|
+| Auth email/contraseña + recuperar contraseña | Implementado |
+| Playlist compartida en BD + sync solo dueño | Implementado |
+| Notas compartidas: personal + media + realtime | Implementado |
+| Ranking doble + desempate global por torneos | Implementado |
+| Torneos (estrategias por edad al azar, aviso, Abrir en Spotify) | Implementado |
+| Dashboard desde BD | Implementado |
+| Preview de Spotify integrada | **Pendiente** (rama `preview-spotify`) |
+
+## Flujo de trabajo (git)
+
+- `main` = lo que está en producción (Vercel). Mientras haya gente probando, **no se hace push directo**: se trabaja en ramas y se publica cuando el dueño lo dice (merge a `main` + push).
+- Antes de publicar: `npm run build` siempre (Next falla el build con errores de lint, p. ej. `<a>` interno en vez de `<Link>`).
+
+## Pendientes técnicos
+
+- Preview de Spotify con reproductor incrustado oficial (detalle de canción, flujo de puntuación y torneo). `preview_url` está deprecado por Spotify, así que se usará el embed.
+- Email fiable (SMTP propio) para reactivar la confirmación de email sin límites.
+- A futuro: mover los torneos a la base de datos (ahora son locales por persona) y trocear `playlist-arena-app.tsx`.

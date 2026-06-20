@@ -1,193 +1,44 @@
 # Siguientes Pasos
 
-## Objetivo
+Estado y pendientes del proyecto. La app ya está en producción (https://playlist-arena.vercel.app) y con gente probándola.
 
-Este documento recoge lo siguiente:
+## Hecho
 
-- que falta para poder validar bien la app
-- que conviene instalar o preparar
-- mejoras funcionales
-- mejoras tecnicas
-- orden recomendado de trabajo
+- Multiusuario con login propio (email/contraseña) sobre Supabase.
+- Playlist compartida; sincronización solo del dueño (desde la web o local).
+- Notas por persona + media de la comunidad, con actualización en tiempo real.
+- Ranking doble (tu nota / media de todos) con desempate por victorias de torneo globales.
+- Torneos con estrategias por edad al azar, aviso si faltan canciones y "Abrir en Spotify".
+- Dashboard de estadísticas leyendo de la base de datos.
+- Recuperar contraseña por email (`/reset`).
+- Validación de notas a 1 decimal, novedades en Canciones, filtro contextual, acentos.
 
-## 1. Preparacion del entorno
+## En curso / inmediato
 
-El entorno local ya tiene `Node.js` y `npm` instalados. La app se ha validado correctamente con `npm run lint` y `npm run build`, y puede arrancarse en `http://127.0.0.1:3000`.
+### Preview de Spotify (rama `preview-spotify`)
+- Añadir el **reproductor incrustado oficial de Spotify** (suena la preview de 30s sin login, legal) en: el detalle de la canción, el flujo "Añadir puntuación" y el torneo.
+- Motivo del embed: Spotify retiró el `preview_url` a finales de 2024, así que el play directo sobre la carátula ya casi no funciona.
+- Pendiente de implementar cuando el dueño lo indique.
 
-Antes de avanzar de verdad con ejecucion y validaciones, conviene tener:
+### Email fiable
+- La confirmación de email está desactivada porque el email gratis de Supabase está muy limitado (bloqueaba registros).
+- Para reactivarla bien: montar un SMTP propio (recomendado: **Gmail SMTP** con contraseña de aplicación, no necesita dominio) y subir el límite de emails en Supabase.
 
-### Imprescindible
+## Mejoras futuras
 
-- `Node.js` instalado
-- `npm` disponible
-- archivo `.env.local` creado
+### Funcionales
+- Mover los **torneos a la base de datos** (ahora el torneo en curso y su historial son locales por persona).
+- Vista de "quién puntuó qué" más explícita (ver la nota de cada persona en una canción).
+- Más estadísticas en el dashboard (por artista, por año, evolución).
+- Exportar ranking a CSV/JSON.
 
-Contenido de `.env.local`:
+### Técnicas
+- Trocear `components/playlist-arena-app.tsx` (es muy grande) en secciones (`songs`, `tournament`, `admin`) y extraer hooks.
+- Pruebas unitarias de `lib/tournament.ts` y del merge de `lib/spotify.ts`.
+- Revisar el manejo de fechas de lanzamiento incompletas (solo año).
 
-```bash
-NEXT_PUBLIC_SPOTIFY_CLIENT_ID=
-NEXT_PUBLIC_SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
-```
+## Recordatorios de operación
 
-Spotify ya no acepta `localhost` como redirect local. Hay que usar `127.0.0.1`.
-
-### Recomendable
-
-- `git` instalado para llevar control de cambios
-- navegador con sesion de Spotify lista para pruebas reales
-
-## 2. Instalaciones pendientes
-
-Ya se ha ejecutado `npm install` y existe `package-lock.json`.
-
-Para ejecutar la app localmente:
-
-1. hacer doble clic en `Abrir Playlist Arena.bat`
-2. mantener abierta la ventana del lanzador mientras uses la app
-3. probar login, sync, filtros y torneo
-
-Alternativa manual:
-
-```bash
-npm run dev -- -H 127.0.0.1
-```
-
-Si se arranca manualmente, conviene fijar tambien el puerto para que coincida con Spotify:
-
-```bash
-npm run dev -- -H 127.0.0.1 -p 3000
-```
-
-## 3. Validaciones pendientes
-
-Validaciones hechas:
-
-- `npm install`
-- `npm run lint`
-- `npm run build`
-- arranque local en `127.0.0.1:3000`
-
-Validaciones pendientes con datos reales:
-
-1. probar callback de Spotify tras limpiar sesion
-2. probar import inicial
-3. probar actualizacion con canciones nuevas
-4. probar caso de playlist sin cambios
-5. probar canciones eliminadas de Spotify
-6. probar torneo completo en ambos modos
-
-## 4. Mejoras funcionales recomendadas
-
-### Prioridad alta
-
-- vista de `Ranking` con mas estadisticas
-- filtro por rango visual mas comodo
-- resumen mas claro de canciones eliminadas de la playlist
-- vista de detalles de ultima actualizacion con mas contexto
-
-### Prioridad media
-
-- sistema de exportacion de ranking a `CSV` o `JSON`
-- estadisticas por artista
-- estadisticas por album
-- top canciones por nota
-- top canciones por victorias internas
-- contador de canciones aun sin puntuar
-
-### Prioridad media-alta
-
-- accion guiada para revisar solo las canciones nuevas sin nota
-- confirmacion visual antes de borrar una cancion archivada
-- mensajes tipo toast ademas del popup de errores
-
-### Prioridad futura
-
-- varias playlists archivadas sin mezclar datos
-- comparativas entre notas y victorias
-- panel de analitica
-- historial de cambios de nota por cancion
-
-## 5. Mejoras tecnicas recomendadas
-
-### Refactor de interfaz
-
-`components/playlist-arena-app.tsx` es el centro de casi toda la app. Conviene separarlo mas.
-
-Division recomendada:
-
-- `songs-section.tsx`
-- `tournament-section.tsx`
-- `updates-section.tsx`
-- `song-filters.tsx`
-- `sync-history-panel.tsx`
-
-### Refactor de estado
-
-Conviene extraer logica compartida a hooks o helpers:
-
-- hook de filtros
-- hook de sincronizacion
-- hook de torneo
-- helper de ordenacion del ranking
-
-### Calidad y pruebas
-
-Pendientes tecnicos utiles:
-
-- pruebas unitarias de `lib/tournament.ts`
-- pruebas unitarias de `lib/spotify.ts` en la parte de merge
-- pruebas de regresion para filtros
-- pruebas de persistencia de `localStorage`
-
-### Robustez de datos
-
-Mejoras aconsejables:
-
-- migraciones de datos mas explicitas en `storage`
-- control mas estricto de fechas incompletas
-- normalizacion extra para repetidas
-
-## 6. Mejoras concretas que encajan muy bien con tu idea
-
-Por como has planteado la app, estas mejoras tienen mucho sentido:
-
-1. `Ranking` con mas personalidad visual
-2. `Modo repaso` para puntuar solo canciones nuevas
-3. `Panel de repetidas` con resumen por grupos
-4. `Historial de notas` para ver si cambiaste mucho una cancion con el tiempo
-5. `Estadisticas de torneo` para ver que canciones rinden mejor aunque no tengan la mejor nota
-
-## 7. Orden recomendado de trabajo
-
-### Fase 1
-
-- limpiar datos del navegador si se quiere empezar de cero
-- probar login y sincronizacion real con la playlist propia
-- revisar el primer import completo
-
-### Fase 2
-
-- probar todos los filtros
-- probar ranking y desempates
-- probar canciones fuera de playlist
-
-### Fase 3
-
-- refactorizar el componente principal
-- anadir pruebas basicas
-
-### Fase 4
-
-- mejorar UX
-- anadir exportaciones
-- anadir estadisticas avanzadas
-
-## 8. Siguiente paso recomendado
-
-El mejor siguiente paso practico es este:
-
-1. limpiar `localStorage` del navegador si quieres empezar completamente de cero
-2. recargar `http://127.0.0.1:3000`
-3. conectar Spotify
-4. importar tu playlist
-5. revisar juntos cualquier ajuste visual o funcional que salga de esa prueba
+- `main` es lo desplegado; mientras haya testers, trabajar en ramas y publicar (merge + push) solo cuando se diga.
+- Siempre `npm run build` antes de publicar (Next falla el build con errores de lint).
+- La sincronización de la playlist actualiza la base de datos compartida al instante (no hace falta redeploy para que aparezcan canciones nuevas).
