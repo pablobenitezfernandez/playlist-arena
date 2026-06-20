@@ -2,11 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { UsernameSetup } from "@/components/username-gate";
 
 type Mode = "welcome" | "signin" | "signup" | "forgot";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { loading, session } = useAuth();
+  const { loading, session, profile } = useAuth();
 
   if (loading) {
     return (
@@ -18,6 +19,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!session) {
     return <AuthScreen />;
+  }
+
+  // El perfil aún se está cargando tras iniciar sesión.
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="text-white/40">Cargando…</span>
+      </div>
+    );
+  }
+
+  // Si todavía no tiene @usuario, lo elige antes de entrar.
+  if (!profile.username) {
+    return <UsernameSetup />;
   }
 
   return (
@@ -36,6 +51,9 @@ function AccountBar() {
     <div className="sticky top-0 z-50 flex items-center justify-end gap-3 border-b border-white/8 bg-ink/70 px-4 py-2 backdrop-blur">
       <span className="text-xs text-white/55">
         {name}
+        {profile?.username ? (
+          <span className="ml-1 text-white/40">@{profile.username}</span>
+        ) : null}
         {isOwner ? <span className="ml-1 text-glowSoft">· dueño</span> : null}
       </span>
       <button

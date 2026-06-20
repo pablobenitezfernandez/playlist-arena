@@ -22,6 +22,11 @@ create table if not exists public.profiles (
   created_at   timestamptz not null default now()
 );
 
+-- @usuario único (para añadir amigos sin confundir nombres repetidos).
+-- Se guarda en minúsculas; cada persona lo elige al entrar la primera vez.
+alter table public.profiles add column if not exists username text;
+create unique index if not exists profiles_username_unique on public.profiles (username);
+
 -- ── CANCIONES (playlist compartida) ──────────────────────────────────────
 create table if not exists public.songs (
   entry_id              text primary key,

@@ -15,6 +15,7 @@ export type Profile = {
   id: string;
   display_name: string;
   is_owner: boolean;
+  username: string | null;
 };
 
 type AuthContextValue = {
@@ -32,6 +33,7 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  setUsername: (username: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseClient();
     const { data } = await supabase
       .from("profiles")
-      .select("id, display_name, is_owner")
+      .select("id, display_name, is_owner, username")
       .eq("id", userId)
       .maybeSingle();
 
@@ -142,6 +144,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setUsername = useCallback(
+    async (rawUsername: string) => {
+      const userId = session?.user?.id;
+      if (!userId) {
+        throw new Error("No hay sesión.");
+      }
+
+      const username = rawUsername.trim().toLowerCase();
+
+      if (!/^[a-z0-9_.]{3,20}$/.test(username)) {
+        throw new Error(
+          "El usuario debe tener 3-20 caracteres: minúsculas, números, punto o guión bajo."
+        );
+      }
+
+      const supabase = getSupabaseClient();
+
+      // ¿Está cogido por otra persona?
+      const { data: taken } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .neq("id", userId)
+        .maybeSingle();
+
+      if (taken) {
+        throw new Error("Ese @usuario ya está cogido, prueba otro.");
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ username })
+        .eq("id", userId);
+
+      if (error) {
+        if (error.code === "23505" || error.message.toLowerCase().includes("duplicate")) {
+          throw new Error("Ese @usuario ya está cogido, prueba otro.");
+        }
+        throw new Error(error.message);
+      }
+
+      await loadProfile(userId);
+    },
+    [session, loadProfile]
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       loading,
@@ -153,9 +201,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       resetPassword,
-      updatePassword
+      updatePassword,
+      setUsername
     }),
-    [loading, session, profile, signIn, signUp, signOut, resetPassword, updatePassword]
+    [
+      loading,
+      session,
+      profile,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      setUsername
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
