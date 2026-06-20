@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 
-type Mode = "signin" | "signup" | "forgot";
+type Mode = "welcome" | "signin" | "signup" | "forgot";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading, session } = useAuth();
@@ -51,13 +51,19 @@ function AccountBar() {
 
 function AuthScreen() {
   const { signIn, signUp, resetPassword } = useAuth();
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  function goTo(next: Mode) {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -91,6 +97,48 @@ function AuthScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (mode === "welcome") {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="glass-panel w-full max-w-md rounded-[28px] p-8 text-center">
+          <p className="section-title text-xs text-glowSoft">Playlist Arena</p>
+          <h1 className="mt-1 font-display text-5xl font-bold tracking-[0.06em] text-white">
+            BACHATA
+          </h1>
+          <p className="mt-4 text-sm leading-6 text-white/70">
+            Puntúa las canciones de nuestra playlist y descubre qué piensan los demás.
+          </p>
+
+          <div className="mt-6 text-left">
+            <p className="section-title text-[11px] text-white/45">Aquí puedes</p>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-white/75">
+              <li>🎵 Puntuar cada canción con tu nota (y cambiarla cuando quieras).</li>
+              <li>📊 Ver la media de cada canción y el ranking.</li>
+              <li>🏆 Montar torneos para desempatar tus favoritas.</li>
+            </ul>
+          </div>
+
+          <div className="mt-7 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => goTo("signin")}
+              className="w-full rounded-2xl bg-glow/90 px-4 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-[#06210f] transition hover:bg-glow"
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => goTo("signup")}
+              className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-white transition hover:border-white/30 hover:bg-white/10"
+            >
+              Registrarse
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -202,6 +250,14 @@ function AuthScreen() {
             : mode === "forgot"
             ? "← Volver a iniciar sesión"
             : "¿Ya tienes cuenta? Inicia sesión"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => goTo("welcome")}
+          className="mt-2 w-full text-center text-xs text-white/35 transition hover:text-white/60"
+        >
+          ← Volver al inicio
         </button>
       </div>
     </div>
