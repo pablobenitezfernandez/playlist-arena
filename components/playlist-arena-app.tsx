@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArtistsSection } from "@/components/artists-section";
 import { SongCard } from "@/components/song-card";
 import { SongLibraryItem } from "@/components/song-library-item";
 import { SongRatingFlow } from "@/components/song-rating-flow";
@@ -78,7 +79,7 @@ type SyncOptions = {
   playlistUrlOverride?: string;
 };
 
-type AppSection = "songs" | "tournament" | "updates";
+type AppSection = "songs" | "artists" | "tournament" | "updates";
 type SongsSection = "search" | "ranking";
 type SongSortMode = "added" | "release" | "alpha" | "ranking" | "ranking-global";
 type RatingFilterMode = "all" | "rated" | "unrated";
@@ -1272,7 +1273,7 @@ export function PlaylistArenaApp() {
               </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <button
                 type="button"
                 onClick={() => setActiveSection("songs")}
@@ -1291,6 +1292,22 @@ export function PlaylistArenaApp() {
 
               <button
                 type="button"
+                onClick={() => setActiveSection("artists")}
+                className={`rounded-[28px] border p-5 text-left transition ${
+                  activeSection === "artists"
+                    ? "border-glow/35 bg-glow/12"
+                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                }`}
+              >
+                <p className="section-title text-[11px] text-glowSoft">Opcion 2</p>
+                <h2 className="mt-3 text-2xl font-semibold text-white">Artistas</h2>
+                <p className="mt-3 text-sm leading-6 text-white/62">
+                  La nota media de cada artista según sus canciones, con su ranking y sus temas.
+                </p>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveSection("tournament")}
                 className={`rounded-[28px] border p-5 text-left transition ${
                   activeSection === "tournament"
@@ -1298,7 +1315,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 2</p>
+                <p className="section-title text-[11px] text-glowSoft">Opcion 3</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Torneo</h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
                   Enfrentamientos 1v1 o de 4 canciones con progreso guardado y victorias acumuladas.
@@ -1314,7 +1331,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 3</p>
+                <p className="section-title text-[11px] text-glowSoft">Opcion 4</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">
                   {isOwner ? "Administrar playlist" : "Estado de la playlist"}
                 </h2>
@@ -1341,6 +1358,16 @@ export function PlaylistArenaApp() {
             </div>
           </div>
         </section>
+
+        {activeSection === "artists" ? (
+          <ArtistsSection
+            songs={allSongs}
+            isOwner={isOwner}
+            onSaveRating={handleSaveSongRating}
+            onClearRating={handleClearSongRating}
+            onDeleteArchived={handleDeleteRemovedSong}
+          />
+        ) : null}
 
         {activeSection === "songs" && newReleases.length ? (
           <section className="glass-panel rounded-[32px] p-6 sm:p-7">
