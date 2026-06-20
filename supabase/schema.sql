@@ -202,6 +202,49 @@ exception
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════════
+-- AMISTADES (solicitudes y amigos aceptados)
+-- ════════════════════════════════════════════════════════════════════════
+create table if not exists public.friendships (
+  id           uuid primary key default gen_random_uuid(),
+  requester_id uuid not null references auth.users (id) on delete cascade,
+  addressee_id uuid not null references auth.users (id) on delete cascade,
+  status       text not null default 'pending' check (status in ('pending', 'accepted')),
+  created_at   timestamptz not null default now(),
+  unique (requester_id, addressee_id),
+  check (requester_id <> addressee_id)
+);
+
+create index if not exists friendships_requester_idx on public.friendships (requester_id);
+create index if not exists friendships_addressee_idx on public.friendships (addressee_id);
+
+alter table public.friendships enable row level security;
+
+-- Ves solo las amistades en las que participas.
+drop policy if exists "friendships_select_own" on public.friendships;
+create policy "friendships_select_own" on public.friendships
+  for select to authenticated
+  using (requester_id = auth.uid() or addressee_id = auth.uid());
+
+-- Solo puedes enviar solicitudes en tu nombre (a otra persona).
+drop policy if exists "friendships_insert_self" on public.friendships;
+create policy "friendships_insert_self" on public.friendships
+  for insert to authenticated
+  with check (requester_id = auth.uid() and addressee_id <> auth.uid());
+
+-- Solo el destinatario puede aceptar (cambiar el estado).
+drop policy if exists "friendships_update_addressee" on public.friendships;
+create policy "friendships_update_addressee" on public.friendships
+  for update to authenticated
+  using (addressee_id = auth.uid())
+  with check (addressee_id = auth.uid());
+
+-- Cualquiera de los dos puede borrar (cancelar solicitud, rechazar o dejar de ser amigos).
+drop policy if exists "friendships_delete_own" on public.friendships;
+create policy "friendships_delete_own" on public.friendships
+  for delete to authenticated
+  using (requester_id = auth.uid() or addressee_id = auth.uid());
+
+-- ════════════════════════════════════════════════════════════════════════
 -- AUTO-CREAR PERFIL AL REGISTRARSE
 -- Toma el display_name de los metadatos del registro (o el email si falta).
 -- ════════════════════════════════════════════════════════════════════════

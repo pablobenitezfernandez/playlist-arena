@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArtistsSection } from "@/components/artists-section";
+import { FriendsSection } from "@/components/friends-section";
 import { SongCard } from "@/components/song-card";
 import { SongLibraryItem } from "@/components/song-library-item";
 import { SongRatingFlow } from "@/components/song-rating-flow";
@@ -79,7 +80,7 @@ type SyncOptions = {
   playlistUrlOverride?: string;
 };
 
-type AppSection = "songs" | "artists" | "tournament" | "updates";
+type AppSection = "songs" | "artists" | "tournament" | "friends" | "updates";
 type SongsSection = "search" | "ranking";
 type SongSortMode = "added" | "release" | "alpha" | "ranking" | "ranking-global";
 type RatingFilterMode = "all" | "rated" | "unrated";
@@ -1294,7 +1295,7 @@ export function PlaylistArenaApp() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <button
                 type="button"
                 onClick={() => setActiveSection("songs")}
@@ -1345,6 +1346,22 @@ export function PlaylistArenaApp() {
 
               <button
                 type="button"
+                onClick={() => setActiveSection("friends")}
+                className={`rounded-[28px] border p-5 text-left transition ${
+                  activeSection === "friends"
+                    ? "border-glow/35 bg-glow/12"
+                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                }`}
+              >
+                <p className="section-title text-[11px] text-glowSoft">Opcion 4</p>
+                <h2 className="mt-3 text-2xl font-semibold text-white">Amigos</h2>
+                <p className="mt-3 text-sm leading-6 text-white/62">
+                  Añade amigos por su @usuario y acepta solicitudes.
+                </p>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveSection("updates")}
                 className={`rounded-[28px] border p-5 text-left transition ${
                   activeSection === "updates"
@@ -1352,7 +1369,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 4</p>
+                <p className="section-title text-[11px] text-glowSoft">Opcion 5</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">
                   {isOwner ? "Administrar playlist" : "Estado de la playlist"}
                 </h2>
@@ -1389,6 +1406,8 @@ export function PlaylistArenaApp() {
             onDeleteArchived={handleDeleteRemovedSong}
           />
         ) : null}
+
+        {activeSection === "friends" ? <FriendsSection /> : null}
 
         {activeSection === "songs" && newReleases.length ? (
           <section className="glass-panel rounded-[32px] p-6 sm:p-7">
