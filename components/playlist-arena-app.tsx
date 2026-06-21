@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtistsSection } from "@/components/artists-section";
 import { FriendsSection } from "@/components/friends-section";
+import { fetchIncomingRequestCount } from "@/lib/friends";
 import { SongCard } from "@/components/song-card";
 import { SongLibraryItem } from "@/components/song-library-item";
 import { SongRatingFlow } from "@/components/song-rating-flow";
@@ -230,6 +231,7 @@ export function PlaylistArenaApp() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [playlistLoading, setPlaylistLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<AppSection>("songs");
+  const [incomingFriendCount, setIncomingFriendCount] = useState(0);
   const [songsSection, setSongsSection] = useState<SongsSection>("search");
   const [rankingOrder, setRankingOrder] = useState<"personal" | "community">("personal");
   const [songSortMode, setSongSortMode] = useState<SongSortMode>("alpha");
@@ -404,6 +406,34 @@ export function PlaylistArenaApp() {
       void supabase.removeChannel(channel);
     };
   }, [userId, accessToken]);
+
+  // Aviso de solicitudes de amistad: cuenta las pendientes para el puntito del
+  // menú, refrescando cada 30s (por si te llega una estando en otro apartado).
+  useEffect(() => {
+    if (!userId) {
+      setIncomingFriendCount(0);
+      return;
+    }
+
+    let active = true;
+    const refresh = () => {
+      fetchIncomingRequestCount(userId)
+        .then((n) => {
+          if (active) {
+            setIncomingFriendCount(n);
+          }
+        })
+        .catch(() => {});
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [userId]);
 
   useEffect(() => {
     const options = TOURNAMENT_SIZE_OPTIONS[mode];
@@ -1375,9 +1405,21 @@ export function PlaylistArenaApp() {
                 }`}
               >
                 <p className="section-title text-[11px] text-glowSoft">Opcion 4</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Amigos</h2>
+                <h2 className="mt-3 flex items-center gap-2 text-2xl font-semibold text-white">
+                  Amigos
+                  {incomingFriendCount > 0 ? (
+                    <span
+                      className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-glow px-1.5 text-xs font-bold text-ink"
+                      title={`${incomingFriendCount} solicitud(es) pendiente(s)`}
+                    >
+                      {incomingFriendCount}
+                    </span>
+                  ) : null}
+                </h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
-                  Añade amigos por su @usuario y acepta solicitudes.
+                  {incomingFriendCount > 0
+                    ? `Tienes ${incomingFriendCount} solicitud(es) de amistad pendiente(s).`
+                    : "Añade amigos por su @usuario y acepta solicitudes."}
                 </p>
               </button>
 
@@ -1428,7 +1470,9 @@ export function PlaylistArenaApp() {
           />
         ) : null}
 
-        {activeSection === "friends" ? <FriendsSection songs={allSongs} /> : null}
+        {activeSection === "friends" ? (
+          <FriendsSection songs={allSongs} onIncomingCountChange={setIncomingFriendCount} />
+        ) : null}
 
         {activeSection === "songs" && newReleases.length ? (
           <section className="glass-panel rounded-[32px] p-6 sm:p-7">

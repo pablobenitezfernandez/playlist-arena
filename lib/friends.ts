@@ -171,6 +171,24 @@ export async function fetchFriendTournaments(
   }));
 }
 
+/**
+ * Cuenta cuántas solicitudes de amistad pendientes tengo recibidas. Consulta
+ * ligera (sin traer perfiles) para el aviso/puntito del menú.
+ */
+export async function fetchIncomingRequestCount(myId: string): Promise<number> {
+  const supabase = getSupabaseClient();
+  const { count, error } = await supabase
+    .from("friendships")
+    .select("id", { count: "exact", head: true })
+    .eq("addressee_id", myId)
+    .eq("status", "pending");
+
+  if (error) {
+    return 0; // silencioso: el puntito no debe romper nada
+  }
+  return count ?? 0;
+}
+
 /** Carga mis amigos y solicitudes (entrantes y salientes), con sus perfiles. */
 export async function fetchFriends(myId: string): Promise<FriendsData> {
   const supabase = getSupabaseClient();

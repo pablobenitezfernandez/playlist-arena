@@ -30,7 +30,13 @@ function formatTournamentDate(iso: string): string {
   }
 }
 
-export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
+export function FriendsSection({
+  songs = [],
+  onIncomingCountChange
+}: {
+  songs?: PlaylistSong[];
+  onIncomingCountChange?: (count: number) => void;
+}) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
@@ -100,13 +106,16 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
       return;
     }
     try {
-      setData(await fetchFriends(userId));
+      const next = await fetchFriends(userId);
+      setData(next);
+      // Mantiene el puntito del menú en sync al instante (aceptar/rechazar).
+      onIncomingCountChange?.(next.incoming.length);
     } catch {
       // silencioso: una recarga fallida no rompe la vista
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, onIncomingCountChange]);
 
   useEffect(() => {
     void reload();
