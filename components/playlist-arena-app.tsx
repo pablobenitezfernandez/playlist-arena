@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtistsSection } from "@/components/artists-section";
 import { FriendsSection } from "@/components/friends-section";
 import { SongCard } from "@/components/song-card";
@@ -236,6 +236,9 @@ export function PlaylistArenaApp() {
   const [auth, setAuth] = useState<SpotifyAuthSession | null>(null);
   const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
   const [tournament, setTournament] = useState<TournamentState | null>(null);
+  // Cerrojo: recuerda qué torneo ya se está cerrando para no procesar dos veces
+  // su finalización (evita victorias duplicadas si hay un doble clic rapidísimo).
+  const finalizingTournamentRef = useRef<string | null>(null);
   const [tournamentArchive, setTournamentArchive] = useState<TournamentArchiveEntry[]>([]);
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [playlistUrl, setPlaylistUrl] = useState("");
@@ -837,12 +840,27 @@ export function PlaylistArenaApp() {
       const nextTournament = advanceTournament(tournament, songId);
 
       if (nextTournament.completed) {
-        const champion = await applyCompletedTournamentResults(nextTournament);
+        // Cerrojo anti-reentrada: si este torneo ya se está cerrando, no repetir
+        // (evita guardar las victorias dos veces ante un doble clic).
+        if (finalizingTournamentRef.current === nextTournament.id) {
+          return;
+        }
+        finalizingTournamentRef.current = nextTournament.id;
+
+        // Primero cerramos la pantalla del torneo (desaparece el botón de elegir
+        // ganador, así no se puede volver a pulsar) y DESPUÉS guardamos en la BD.
         persistTournament(nextTournament);
-        setNotice({
-          tone: "success",
-          message: `${champion?.title ?? "Una cancion"} ha ganado el torneo y sus victorias internas ya se han sumado al ranking.`
-        });
+        try {
+          const champion = await applyCompletedTournamentResults(nextTournament);
+          setNotice({
+            tone: "success",
+            message: `${champion?.title ?? "Una cancion"} ha ganado el torneo y sus victorias internas ya se han sumado al ranking.`
+          });
+        } catch (saveError) {
+          // Si el guardado falla, soltamos el cerrojo para poder reintentar.
+          finalizingTournamentRef.current = null;
+          throw saveError;
+        }
       } else {
         persistTournament(nextTournament);
         setNotice(null);
