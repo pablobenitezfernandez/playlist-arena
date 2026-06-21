@@ -57,8 +57,9 @@ Al completar un torneo, sus victorias se suman al cómputo global que desempata 
 
 - **Añadir por @usuario**: escribe el @usuario de tu amigo y dale a **Enviar solicitud**.
 - En **Solicitudes recibidas**, acepta o rechaza.
-- Tus **amigos aceptados** salen en la lista.
-- (Pronto) podrás ver el top 10 y los torneos de tus amigos.
+- Tus **amigos aceptados** salen en la lista. En cada uno:
+  - **Ver perfil**: muestra su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (🥇🥈🥉).
+  - **Eliminar**: deja de ser su amigo (con confirmación). Tendrás que volver a mandar solicitud para ver de nuevo sus datos.
 
 ## 5. Estado de la playlist
 
@@ -71,5 +72,6 @@ Entra en **/dashboard** (o el botón "Ver Dashboard") para ver estadísticas: to
 
 ## Privacidad y notas
 
-- Tus notas son tuyas, pero **la media y quién puntuó cada canción se ven entre todos** (esa es la idea de la app).
+- La **media del ranking es de todos** (amigos y no amigos): esa es la idea de la app.
+- Lo "de amigos" es poder ver el **detalle** de un amigo: sus notas (su top 10) y sus torneos. Esos detalles solo los ves de tus **amigos aceptados**.
 - No necesitas cuenta de Spotify para usar la app: solo el dueño la usa, y solo para mantener la playlist al día.

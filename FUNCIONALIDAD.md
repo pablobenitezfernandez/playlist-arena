@@ -5,7 +5,7 @@
 Playlist Arena es una app web **multiusuario** sobre **una única playlist compartida** de Spotify. Cada persona inicia sesión, puntúa canciones y todos ven la media de la comunidad y el ranking conjunto. El dueño es quien mantiene la playlist sincronizada desde Spotify.
 
 - Datos compartidos (canciones, notas, victorias de torneo): en **Supabase**.
-- Torneos (en curso e historial): por persona, en `localStorage`.
+- Torneos: el **progreso e historial completo** van por persona en `localStorage`; al completar un torneo, su **resultado final** (campeón + top 3) también se guarda en **Supabase** (`tournament_results`) para que tus amigos lo vean.
 
 ## Acceso y cuentas
 
@@ -57,11 +57,13 @@ Apartado propio. Lista de todos los artistas de la playlist (incluye colaboracio
 
 ## Amigos
 
-Apartado para conectar con otra gente de la app (Fase 1 hecha):
+Apartado para conectar con otra gente de la app:
 - **Añadir por @usuario**: escribes el @usuario y envías solicitud.
 - **Solicitudes recibidas**: aceptar o rechazar.
 - **Solicitudes enviadas** y **lista de amigos**.
-- (Fase 2, en curso) ver el top 10 y los torneos de tus amigos. La privacidad será **entre amigos**: tus notas/torneos solo los verán tus amigos aceptados.
+- **Eliminar amigo** (con confirmación): deja de ser amigos; para volver a ver sus datos hay que mandar solicitud de nuevo.
+- **Ver perfil** de un amigo (Fase 2): su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (campeón + top 3).
+- **Privacidad (Opción A "blanda")**: la **media del ranking sigue siendo de todos** (amigos y no amigos), igual que siempre. Lo "entre amigos" es poder ver el **detalle** (notas y torneos) de tus amigos aceptados; la app solo muestra ese detalle de amigos. (Un blindaje "duro" a nivel de base de datos queda pendiente para el futuro, si se abre la app a desconocidos.)
 
 ## Preview de Spotify
 
