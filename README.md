@@ -14,9 +14,9 @@ Aplicación web **multiusuario** para puntuar y comparar las canciones de **una 
 - **Dos notas por canción**: tu nota personal + la **media de todos** (con número de votos). Solo 1 decimal.
 - **Ranking doble**: por tu nota o por la media de todos. Desempate por **victorias de torneo de todas las personas**.
 - **Artistas**: media por artista (personal y de todos), búsqueda, orden, y abrir para ver/puntuar sus canciones.
-- **Torneos**: 1v1 o 4-way, con estrategias por edad de la canción (al azar). Cada canción tiene reproductor de Spotify y "Abrir en Spotify".
-- **Amigos**: añadir por @usuario, aceptar/rechazar solicitudes. (Ver datos de amigos = Fase 2, en curso.)
-- **Preview de Spotify**: reproductor oficial incrustado (30s sin login) en el detalle, al puntuar y en el torneo.
+- **Torneos**: 1v1 o 4-way, con estrategias por edad de la canción (al azar). Cada canción tiene reproductor de Spotify y "Abrir en Spotify"; al darle play a una, las demás se **pausan solas**.
+- **Amigos**: añadir por @usuario, aceptar/rechazar/eliminar, y **"Ver perfil"** de cada amigo (su top 10 + sus torneos de la semana). Un **puntito** avisa de solicitudes pendientes.
+- **Preview de Spotify**: reproductor oficial incrustado (30s sin login) en el detalle, al puntuar y en el torneo. Coordinado para que no suenen dos a la vez.
 - **Dashboard** (`/dashboard`): estadísticas personales y de comunidad + **top semanal por victorias**.
 - **Tiempo real**: cuando alguien puntúa, la media se actualiza (refresco automático + realtime).
 
@@ -27,7 +27,7 @@ Al entrar (tras la bienvenida + login + @usuario) hay cinco apartados:
 1. **Canciones** — Búsqueda y Ranking (+ Novedades arriba: 10 lanzamientos más recientes).
 2. **Artistas** — media y ranking por artista.
 3. **Torneo** — montar y jugar brackets.
-4. **Amigos** — añadir por @usuario, solicitudes y lista de amigos.
+4. **Amigos** — añadir por @usuario, solicitudes (con aviso/puntito), lista de amigos y "Ver perfil" (top 10 + torneos de la semana).
 5. **Estado de la playlist** — solo lectura; para el **dueño** es "Administrar playlist" (sincronizar desde Spotify, duplicadas, última actualización).
 
 ## Roles
@@ -41,10 +41,11 @@ Al entrar (tras la bienvenida + login + @usuario) hay cinco apartados:
 |---|---|---|
 | Perfiles (nombre, @usuario, is_owner) | Supabase (`profiles`) | @usuario único por persona |
 | Canciones de la playlist | Supabase (`songs`) | Sí (una copia para todos) |
-| Notas por persona | Supabase (`ratings`) | Sí (todos ven la media; las individuales pasarán a privadas entre amigos en Fase 2) |
+| Notas por persona | Supabase (`ratings`) | Sí: la **media es de todos**. El detalle (qué puso cada uno) se ve de tus **amigos** en su perfil. (Blindaje "duro" = futuro.) |
 | Victorias de torneo | Supabase (`tournament_song_wins`) | Sí (suma global para el desempate + top semanal) |
+| Resultado final de cada torneo | Supabase (`tournament_results`) | Visible para ti y tus **amigos** (top 10 + torneos de la semana) |
 | Amistades | Supabase (`friendships`) | Solo las tuyas (RLS) |
-| Torneo en curso / historial de torneos | `localStorage` del navegador | No (por persona, por ahora) |
+| Torneo en curso / historial completo | `localStorage` del navegador | No (por persona); solo el **resultado final** sube a la BD |
 
 ## Puesta en marcha (desarrollo)
 
@@ -86,5 +87,5 @@ Requisitos: Node.js (LTS) y npm.
 ## Notas técnicas (Spotify 2026)
 
 - La app usa el endpoint `/playlists/{playlist_id}/items` y OAuth PKCE.
-- Spotify retiró el campo `popularity` (no se usa) y, a finales de 2024, también el `preview_url`, por lo que las previews integradas requieren el reproductor incrustado oficial de Spotify (pendiente).
+- Spotify retiró el campo `popularity` (no se usa) y, a finales de 2024, también el `preview_url`, por lo que las previews usan el **reproductor incrustado oficial** de Spotify vía su **IFrame API** (que además permite pausar unos reproductores cuando suena otro).
 - En modo desarrollo de la app de Spotify, solo las cuentas añadidas en *User Management* pueden conectar Spotify — como solo sincroniza el dueño, basta con que él esté añadido.

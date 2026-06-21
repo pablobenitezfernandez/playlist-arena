@@ -42,7 +42,7 @@ Sirve para desempatar tus gustos enfrentando canciones.
    - **Antiguas (más de 6 años)** — al azar entre las más viejas.
    - **Nuevas (últimos 6 años)** — al azar entre las más nuevas.
 2. Pulsa **Empezar torneo**. Si no hay suficientes canciones del grupo elegido, saldrá un aviso para bajar la cantidad.
-3. En cada enfrentamiento, elige tu favorita. Cada canción tiene **"Abrir en Spotify"** por si quieres escucharla antes.
+3. En cada enfrentamiento, elige tu favorita. Cada canción tiene su **reproductor** (preview) y **"Abrir en Spotify"** por si quieres escucharla antes. Si le das al play a una, la otra se **para sola** (no se solapan).
 4. Puedes **Salir** o **Reiniciar** el torneo. Si no lo terminas, ese intento no cuenta.
 
 Al completar un torneo, sus victorias se suman al cómputo global que desempata el ranking.
@@ -56,7 +56,7 @@ Al completar un torneo, sus victorias se suman al cómputo global que desempata 
 ## 4. Amigos
 
 - **Añadir por @usuario**: escribe el @usuario de tu amigo y dale a **Enviar solicitud**.
-- En **Solicitudes recibidas**, acepta o rechaza.
+- En **Solicitudes recibidas**, acepta o rechaza. Cuando tengas solicitudes pendientes, verás un **puntito con el número** en la tarjeta "Amigos" del menú.
 - Tus **amigos aceptados** salen en la lista. En cada uno:
   - **Ver perfil**: muestra su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (🥇🥈🥉).
   - **Eliminar**: deja de ser su amigo (con confirmación). Tendrás que volver a mandar solicitud para ver de nuevo sus datos.

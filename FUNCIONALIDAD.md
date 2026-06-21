@@ -59,7 +59,7 @@ Apartado propio. Lista de todos los artistas de la playlist (incluye colaboracio
 
 Apartado para conectar con otra gente de la app:
 - **Añadir por @usuario**: escribes el @usuario y envías solicitud.
-- **Solicitudes recibidas**: aceptar o rechazar.
+- **Solicitudes recibidas**: aceptar o rechazar. Un **puntito** en la tarjeta "Amigos" del menú avisa del nº de solicitudes pendientes (se refresca cada 30s y al instante al aceptar/rechazar).
 - **Solicitudes enviadas** y **lista de amigos**.
 - **Eliminar amigo** (con confirmación): deja de ser amigos; para volver a ver sus datos hay que mandar solicitud de nuevo.
 - **Ver perfil** de un amigo (Fase 2): su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (campeón + top 3).
@@ -67,7 +67,9 @@ Apartado para conectar con otra gente de la app:
 
 ## Preview de Spotify
 
-En el detalle de cada canción, en el flujo "Añadir puntuación" y en cada canción del torneo hay un **reproductor oficial incrustado de Spotify** que suena la preview de 30s sin necesidad de login (para quien tenga sesión Premium en su navegador, suena entera).
+En el detalle de cada canción, en el flujo "Añadir puntuación" y en cada canción del torneo hay un **reproductor oficial incrustado de Spotify** (vía su IFrame API) que suena la preview de 30s sin necesidad de login (para quien tenga sesión Premium en su navegador, suena entera).
+
+Los reproductores están **coordinados**: al darle play a uno, los demás de la pantalla se **pausan solos**. Así en el torneo (2 o 4 canciones) no se solapan los audios (se notaba sobre todo en móvil, donde cada preview sonaba por su cuenta).
 
 ## Torneo
 
@@ -95,8 +97,9 @@ Si pides un tamaño mayor que las canciones disponibles de ese grupo (p. ej. 256
 ### Victorias y desempate
 
 - Durante el torneo solo avanza el bracket.
-- Al **completarlo**, se cuentan las victorias de cada canción y se guardan en la base de datos compartida (`tournament_song_wins`).
-- Ese total **global** (de todas las personas) desempata el ranking entre canciones con la misma nota.
+- Al **completarlo**, se cuentan las victorias de cada canción y se guardan en la base de datos compartida (`tournament_song_wins`). En un cuadro de 16, el campeón suma 4 victorias, el finalista 3, etc. (una por enfrentamiento ganado).
+- También se guarda el **resultado final** (campeón + top 3) en `tournament_results`, para que tus amigos lo vean en tu perfil.
+- Ese total **global** de victorias (de todas las personas) desempata el ranking entre canciones con la misma nota. El guardado está protegido contra el doble-disparo (no duplica victorias aunque pulses dos veces al terminar).
 - Si sales o reinicias antes de terminar, no se registran victorias ni queda en el historial.
 
 ## Administrar playlist (solo dueño)

@@ -109,9 +109,10 @@ Esto es cuando cambia el **código** (no los datos). Normalmente lo hacemos junt
 Si publicas algo y la web empieza a fallar, hay dos formas de volver al estado bueno anterior. **Siempre antes de publicar algo arriesgado, creamos un punto de respaldo** (un "tag" y una rama en git que apuntan a la versión que funcionaba).
 
 ### Punto de respaldo actual
-- **Tag**: `estable-pre-preview`
-- **Rama**: `respaldo-pre-preview`
-- Apuntan a la producción estable de antes del preview de Spotify.
+- **Tag**: `estable-pre-reproductor`
+- **Rama**: `respaldo-pre-reproductor`
+- Apuntan a la producción estable de antes del reproductor coordinado (el último cambio publicado).
+- Cada función publicada deja su propio punto: `estable-pre-amigosfase2`, `estable-pre-fixvictorias`, `estable-pre-puntito`, `estable-pre-reproductor`… (siempre puedes volver a cualquiera).
 
 ### Método 1 — Vercel (rápido, recomendado, sin git)
 Es lo más fácil y es **instantáneo**:
@@ -124,10 +125,10 @@ Es lo más fácil y es **instantáneo**:
 Si quieres que el **código** vuelva al punto estable (en la terminal, dentro de `torneo`):
 ```
 git checkout main
-git reset --hard estable-pre-preview
+git reset --hard estable-pre-reproductor
 git push origin main --force
 ```
-Vercel detecta el push y redespliega ese estado estable. El trabajo nuevo no se pierde: sigue guardado en su rama (p. ej. `preview-spotify`), listo para arreglarlo y volver a intentarlo.
+Vercel detecta el push y redespliega ese estado estable. El trabajo nuevo no se pierde: sigue guardado en su rama (p. ej. `reproductor-pausa-movil`), listo para arreglarlo y volver a intentarlo.
 
 > ⚠️ El `--force` reescribe la rama `main`. Úsalo solo para esto (rollback) y solo si el Método 1 no te vale. Si dudas, usa siempre el Método 1 (Vercel).
 
