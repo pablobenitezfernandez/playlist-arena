@@ -312,21 +312,21 @@ export async function saveTournamentResult(
     wins: song.wins
   }));
 
-  const { error } = await supabase.from("tournament_results").upsert(
-    {
-      user_id: userId,
-      tournament_id: entry.tournamentId,
-      mode: entry.mode,
-      size: entry.size,
-      selection_strategy: entry.selectionStrategy,
-      champion_entry_id: entry.championId,
-      top_songs: topThree,
-      completed_at: entry.completedAt
-    },
-    { onConflict: "user_id,tournament_id" }
-  );
+  // El resultado de un torneo es FINAL: se inserta una vez. Si por lo que sea
+  // se reintenta el mismo torneo (doble disparo), el conflicto de clave única
+  // (23505) se ignora en silencio, sin necesitar permiso de UPDATE en la RLS.
+  const { error } = await supabase.from("tournament_results").insert({
+    user_id: userId,
+    tournament_id: entry.tournamentId,
+    mode: entry.mode,
+    size: entry.size,
+    selection_strategy: entry.selectionStrategy,
+    champion_entry_id: entry.championId,
+    top_songs: topThree,
+    completed_at: entry.completedAt
+  });
 
-  if (error) {
+  if (error && error.code !== "23505") {
     throw new Error(`No se pudo guardar el resultado del torneo: ${error.message}`);
   }
 }
