@@ -14,15 +14,15 @@ type FriendshipRow = {
   created_at: string;
 };
 
-export type FriendRequest = {
+export type FriendEntry = {
   friendshipId: string;
   profile: FriendProfile;
 };
 
 export type FriendsData = {
-  friends: FriendProfile[]; // amistades aceptadas
-  incoming: FriendRequest[]; // solicitudes que me han enviado
-  outgoing: FriendRequest[]; // solicitudes que yo he enviado
+  friends: FriendEntry[]; // amistades aceptadas
+  incoming: FriendEntry[]; // solicitudes que me han enviado
+  outgoing: FriendEntry[]; // solicitudes que yo he enviado
 };
 
 /** Busca un perfil por su @usuario exacto (sin la @). */
@@ -134,20 +134,20 @@ export async function fetchFriends(myId: string): Promise<FriendsData> {
     }
   }
 
-  const toRequest = (f: FriendshipRow, otherId: string): FriendRequest | null => {
+  const toEntry = (f: FriendshipRow, otherId: string): FriendEntry | null => {
     const profile = profileMap.get(otherId);
     return profile ? { friendshipId: f.id, profile } : null;
   };
 
   return {
     friends: accepted
-      .map((f) => profileMap.get(f.requester_id === myId ? f.addressee_id : f.requester_id))
-      .filter((p): p is FriendProfile => Boolean(p)),
+      .map((f) => toEntry(f, f.requester_id === myId ? f.addressee_id : f.requester_id))
+      .filter((e): e is FriendEntry => Boolean(e)),
     incoming: incoming
-      .map((f) => toRequest(f, f.requester_id))
-      .filter((r): r is FriendRequest => Boolean(r)),
+      .map((f) => toEntry(f, f.requester_id))
+      .filter((e): e is FriendEntry => Boolean(e)),
     outgoing: outgoing
-      .map((f) => toRequest(f, f.addressee_id))
-      .filter((r): r is FriendRequest => Boolean(r))
+      .map((f) => toEntry(f, f.addressee_id))
+      .filter((e): e is FriendEntry => Boolean(e))
   };
 }

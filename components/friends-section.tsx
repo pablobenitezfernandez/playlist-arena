@@ -22,6 +22,7 @@ export function FriendsSection() {
   const [addValue, setAddValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     if (!userId) {
@@ -186,13 +187,54 @@ export function FriendsSection() {
               </p>
             ) : (
               <div className="mt-4 space-y-3">
-                {data.friends.map((friend) => (
+                {data.friends.map((entry) => (
                   <div
-                    key={friend.id}
-                    className="flex items-center justify-between gap-3 rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm"
+                    key={entry.friendshipId}
+                    className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm"
                   >
-                    {nameOf(friend)}
-                    <span className="text-xs text-white/40">amigo</span>
+                    {confirmRemoveId === entry.friendshipId ? (
+                      <div className="space-y-3">
+                        <p className="text-white/80">
+                          ¿Seguro que quieres eliminar a{" "}
+                          <span className="font-semibold text-white">
+                            {entry.profile.username ? `@${entry.profile.username}` : entry.profile.display_name}
+                          </span>
+                          ? Tendrás que volver a mandar solicitud para volver a ver sus datos.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              setConfirmRemoveId(null);
+                              void runAction(() => removeFriendship(entry.friendshipId));
+                            }}
+                            className="rounded-full bg-rose/80 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose disabled:opacity-50"
+                          >
+                            Sí, eliminar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmRemoveId(null)}
+                            className="rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-white/25 hover:text-white"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3">
+                        {nameOf(entry.profile)}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setConfirmRemoveId(entry.friendshipId)}
+                          className="rounded-full border border-rose/30 px-4 py-2 text-xs font-semibold text-rose transition hover:border-rose/50 hover:bg-rose/10 disabled:opacity-50"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

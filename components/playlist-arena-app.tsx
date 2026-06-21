@@ -1473,6 +1473,34 @@ export function PlaylistArenaApp() {
 
         {activeSection === "songs" ? (
           <section className="space-y-6">
+            <div className="glass-panel rounded-[32px] border border-glow/20 bg-glow/[0.06] p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="section-title text-[11px] text-glowSoft">Puntuar</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">Añadir puntuación</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">
+                    Te muestra una canción que aún no has puntuado, al azar. Al guardar, salta a otra.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRatingFlowOpen((current) => !current)}
+                  className="shrink-0 rounded-full bg-glow px-6 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-glowSoft"
+                >
+                  {ratingFlowOpen ? "Cerrar" : "Añadir puntuación"}
+                </button>
+              </div>
+              {ratingFlowOpen ? (
+                <div className="mt-6">
+                  <SongRatingFlow
+                    songs={allSongs}
+                    onSaveRating={handleSaveSongRating}
+                    onClose={() => setRatingFlowOpen(false)}
+                  />
+                </div>
+              ) : null}
+            </div>
+
             <div className="glass-panel rounded-[32px] p-6 sm:p-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -1566,25 +1594,6 @@ export function PlaylistArenaApp() {
                           <option value="ranking-global">Ranking global (media de todos)</option>
                         </select>
                       </label>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setRatingFlowOpen((current) => !current)}
-                          className="rounded-full bg-glow px-5 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-glowSoft"
-                        >
-                          {ratingFlowOpen ? "Cerrar puntuación" : "Añadir puntuación"}
-                        </button>
-                        <span className="text-sm text-white/55">
-                          Solo te muestra canciones que aún no has puntuado, en orden aleatorio.
-                        </span>
-                      </div>
-                      {ratingFlowOpen ? (
-                        <SongRatingFlow
-                          songs={allSongs}
-                          onSaveRating={handleSaveSongRating}
-                          onClose={() => setRatingFlowOpen(false)}
-                        />
-                      ) : null}
                       {searchSongs.length ? (
                         <div className="space-y-4">
                           {searchSongs.map((song) => (
