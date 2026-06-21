@@ -245,6 +245,57 @@ create policy "friendships_delete_own" on public.friendships
   using (requester_id = auth.uid() or addressee_id = auth.uid());
 
 -- ════════════════════════════════════════════════════════════════════════
+-- RESULTADOS DE TORNEO (solo el resultado final de cada torneo completado)
+-- Para que tus AMIGOS puedan ver tus torneos de la semana y sus posiciones.
+-- ════════════════════════════════════════════════════════════════════════
+create table if not exists public.tournament_results (
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null references auth.users (id) on delete cascade,
+  tournament_id      text not null,
+  mode               text not null,
+  size               integer not null default 0,
+  selection_strategy text not null default '',
+  champion_entry_id  text not null default '',
+  top_songs          jsonb not null default '[]'::jsonb, -- top 3 con posiciones
+  completed_at       timestamptz not null default now(),
+  created_at         timestamptz not null default now(),
+  unique (user_id, tournament_id)
+);
+
+create index if not exists tournament_results_user_idx on public.tournament_results (user_id);
+create index if not exists tournament_results_completed_idx on public.tournament_results (completed_at);
+
+alter table public.tournament_results enable row level security;
+
+-- Ves tus propios resultados Y los de tus amigos aceptados (privacidad "blanda").
+drop policy if exists "tournament_results_select_self_or_friends" on public.tournament_results;
+create policy "tournament_results_select_self_or_friends" on public.tournament_results
+  for select to authenticated
+  using (
+    user_id = auth.uid()
+    or exists (
+      select 1 from public.friendships f
+      where f.status = 'accepted'
+        and (
+          (f.requester_id = auth.uid() and f.addressee_id = tournament_results.user_id)
+          or (f.addressee_id = auth.uid() and f.requester_id = tournament_results.user_id)
+        )
+    )
+  );
+
+-- Solo guardas resultados a tu nombre.
+drop policy if exists "tournament_results_insert_self" on public.tournament_results;
+create policy "tournament_results_insert_self" on public.tournament_results
+  for insert to authenticated
+  with check (user_id = auth.uid());
+
+-- Solo borras los tuyos.
+drop policy if exists "tournament_results_delete_self" on public.tournament_results;
+create policy "tournament_results_delete_self" on public.tournament_results
+  for delete to authenticated
+  using (user_id = auth.uid());
+
+-- ════════════════════════════════════════════════════════════════════════
 -- AUTO-CREAR PERFIL AL REGISTRARSE
 -- Toma el display_name de los metadatos del registro (o el email si falta).
 -- ════════════════════════════════════════════════════════════════════════

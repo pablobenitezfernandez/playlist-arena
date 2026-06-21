@@ -34,6 +34,7 @@ import {
   deleteSongFromDb,
   fetchSharedPlaylist,
   saveRatingToDb,
+  saveTournamentResult,
   saveTournamentWins,
   syncPlaylistToDb
 } from "@/lib/db";
@@ -811,6 +812,8 @@ export function PlaylistArenaApp() {
     // tener el conteo global (de todas las personas).
     try {
       await saveTournamentWins(userId, nextTournament.id, winCounts);
+      // Guarda el resultado final (campeón + top 3) para que lo vean tus amigos.
+      await saveTournamentResult(userId, archiveEntry);
       await reloadPlaylist();
     } catch (errorValue) {
       setNotice({

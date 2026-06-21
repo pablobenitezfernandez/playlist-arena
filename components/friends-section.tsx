@@ -5,17 +5,30 @@ import { useAuth } from "@/lib/auth-context";
 import {
   acceptFriendRequest,
   fetchFriendRatings,
+  fetchFriendTournaments,
   fetchFriends,
   findUserByUsername,
   removeFriendship,
   sendFriendRequest,
-  type FriendsData
+  type FriendsData,
+  type FriendTournament
 } from "@/lib/friends";
 import type { PlaylistSong } from "@/lib/types";
 
 const EMPTY: FriendsData = { friends: [], incoming: [], outgoing: [] };
 
 type TopItem = { entryId: string; title: string; artists: string[]; rating: number };
+
+function formatTournamentDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short"
+    });
+  } catch {
+    return "";
+  }
+}
 
 export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
   const { user } = useAuth();
@@ -29,6 +42,7 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [openTopId, setOpenTopId] = useState<string | null>(null);
   const [topItems, setTopItems] = useState<TopItem[] | null>(null);
+  const [friendTournaments, setFriendTournaments] = useState<FriendTournament[] | null>(null);
   const [topLoading, setTopLoading] = useState(false);
 
   const songById = useMemo(() => {
@@ -44,10 +58,12 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
       if (openTopId === friendshipId) {
         setOpenTopId(null);
         setTopItems(null);
+        setFriendTournaments(null);
         return;
       }
       setOpenTopId(friendshipId);
       setTopItems(null);
+      setFriendTournaments(null);
       setTopLoading(true);
       try {
         const ratings = await fetchFriendRatings(friendId);
@@ -66,6 +82,14 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
         setTopItems([]);
       } finally {
         setTopLoading(false);
+      }
+
+      // Los torneos son independientes: si fallan (p. ej. la tabla aún no
+      // existe), el top 10 se sigue viendo igual.
+      try {
+        setFriendTournaments(await fetchFriendTournaments(friendId, 7));
+      } catch {
+        setFriendTournaments([]);
       }
     },
     [openTopId, songById]
@@ -283,7 +307,7 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
                                   : "border-white/12 text-white/70 hover:border-white/25 hover:text-white"
                               }`}
                             >
-                              {openTopId === entry.friendshipId ? "Ocultar top 10" : "Ver top 10"}
+                              {openTopId === entry.friendshipId ? "Ocultar perfil" : "Ver perfil"}
                             </button>
                             <button
                               type="button"
@@ -297,39 +321,90 @@ export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
                         </div>
 
                         {openTopId === entry.friendshipId ? (
-                          <div className="rounded-[16px] border border-white/10 bg-black/20 p-4">
-                            <p className="section-title text-[11px] text-glowSoft">
-                              Top 10 de {entry.profile.username ? `@${entry.profile.username}` : entry.profile.display_name}
-                            </p>
-                            {topLoading ? (
-                              <p className="mt-3 text-sm text-white/55">Cargando…</p>
-                            ) : !topItems || topItems.length === 0 ? (
-                              <p className="mt-3 text-sm text-white/55">
-                                Este amigo todavía no ha puntuado canciones.
+                          <div className="space-y-3 rounded-[16px] border border-white/10 bg-black/20 p-4">
+                            <div>
+                              <p className="section-title text-[11px] text-glowSoft">
+                                Top 10 de {entry.profile.username ? `@${entry.profile.username}` : entry.profile.display_name}
                               </p>
-                            ) : (
-                              <ol className="mt-3 space-y-1.5">
-                                {topItems.map((item, index) => (
-                                  <li
-                                    key={item.entryId}
-                                    className="flex items-center gap-3 text-sm"
-                                  >
-                                    <span className="w-5 shrink-0 text-right text-white/40">
-                                      {index + 1}
-                                    </span>
-                                    <span className="min-w-0 flex-1 truncate text-white/85">
-                                      {item.title}
-                                      {item.artists.length > 0 ? (
-                                        <span className="text-white/45"> · {item.artists.join(", ")}</span>
-                                      ) : null}
-                                    </span>
-                                    <span className="shrink-0 font-semibold text-glowSoft">
-                                      {item.rating.toFixed(1)}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ol>
-                            )}
+                              {topLoading ? (
+                                <p className="mt-3 text-sm text-white/55">Cargando…</p>
+                              ) : !topItems || topItems.length === 0 ? (
+                                <p className="mt-3 text-sm text-white/55">
+                                  Este amigo todavía no ha puntuado canciones.
+                                </p>
+                              ) : (
+                                <ol className="mt-3 space-y-1.5">
+                                  {topItems.map((item, index) => (
+                                    <li
+                                      key={item.entryId}
+                                      className="flex items-center gap-3 text-sm"
+                                    >
+                                      <span className="w-5 shrink-0 text-right text-white/40">
+                                        {index + 1}
+                                      </span>
+                                      <span className="min-w-0 flex-1 truncate text-white/85">
+                                        {item.title}
+                                        {item.artists.length > 0 ? (
+                                          <span className="text-white/45"> · {item.artists.join(", ")}</span>
+                                        ) : null}
+                                      </span>
+                                      <span className="shrink-0 font-semibold text-glowSoft">
+                                        {item.rating.toFixed(1)}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ol>
+                              )}
+                            </div>
+
+                            {!topLoading ? (
+                              <div className="border-t border-white/10 pt-3">
+                                <p className="section-title text-[11px] text-glowSoft">
+                                  Torneos de esta semana
+                                </p>
+                                {!friendTournaments || friendTournaments.length === 0 ? (
+                                  <p className="mt-3 text-sm text-white/55">
+                                    No ha completado torneos esta semana.
+                                  </p>
+                                ) : (
+                                  <div className="mt-3 space-y-3">
+                                    {friendTournaments.map((tournament) => (
+                                      <div
+                                        key={tournament.id}
+                                        className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3"
+                                      >
+                                        <div className="flex items-center justify-between gap-2 text-xs text-white/45">
+                                          <span className="uppercase tracking-[0.08em]">
+                                            {tournament.mode} · {tournament.size}
+                                          </span>
+                                          <span>{formatTournamentDate(tournament.completedAt)}</span>
+                                        </div>
+                                        {tournament.podium.length > 0 ? (
+                                          <ol className="mt-2 space-y-1">
+                                            {tournament.podium.map((song, index) => (
+                                              <li
+                                                key={song.entryId}
+                                                className="flex items-center gap-2 text-sm"
+                                              >
+                                                <span className="shrink-0">
+                                                  {["🥇", "🥈", "🥉"][index] ?? `${index + 1}.`}
+                                                </span>
+                                                <span className="min-w-0 flex-1 truncate text-white/85">
+                                                  {song.title}
+                                                  {song.artists.length > 0 ? (
+                                                    <span className="text-white/45"> · {song.artists.join(", ")}</span>
+                                                  ) : null}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ol>
+                                        ) : null}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>

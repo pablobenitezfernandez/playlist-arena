@@ -1,5 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabase";
-import type { ImportedPlaylist, PlaylistSong } from "@/lib/types";
+import type { ImportedPlaylist, PlaylistSong, TournamentArchiveEntry } from "@/lib/types";
 
 // ── filas de la base de datos ───────────────────────────────────────────────
 type SongRow = {
@@ -292,6 +292,42 @@ export async function saveTournamentWins(
 
   if (error) {
     throw new Error(`No se pudieron guardar las victorias del torneo: ${error.message}`);
+  }
+}
+
+/**
+ * Guarda el RESULTADO FINAL de un torneo completado del usuario actual
+ * (campeón + top 3 con posiciones), para que sus amigos puedan verlo.
+ * Solo el resultado: no guarda el bracket completo. Idempotente por torneo.
+ */
+export async function saveTournamentResult(
+  userId: string,
+  entry: TournamentArchiveEntry
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const topThree = entry.topSongs.slice(0, 3).map((song) => ({
+    entryId: song.entryId,
+    title: song.title,
+    artists: song.artists,
+    wins: song.wins
+  }));
+
+  const { error } = await supabase.from("tournament_results").upsert(
+    {
+      user_id: userId,
+      tournament_id: entry.tournamentId,
+      mode: entry.mode,
+      size: entry.size,
+      selection_strategy: entry.selectionStrategy,
+      champion_entry_id: entry.championId,
+      top_songs: topThree,
+      completed_at: entry.completedAt
+    },
+    { onConflict: "user_id,tournament_id" }
+  );
+
+  if (error) {
+    throw new Error(`No se pudo guardar el resultado del torneo: ${error.message}`);
   }
 }
 

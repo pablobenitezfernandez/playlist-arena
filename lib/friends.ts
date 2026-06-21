@@ -118,6 +118,59 @@ export async function fetchFriendRatings(friendId: string): Promise<Map<string, 
   return map;
 }
 
+export type FriendTournamentPodiumSong = {
+  entryId: string;
+  title: string;
+  artists: string[];
+  wins: number;
+};
+
+export type FriendTournament = {
+  id: string;
+  mode: string;
+  size: number;
+  completedAt: string;
+  podium: FriendTournamentPodiumSong[]; // top 3, en orden
+};
+
+/**
+ * Lee los torneos completados de un amigo en los últimos `days` días
+ * (resultado final: campeón + top 3). La RLS solo deja leer esto si sois
+ * amigos aceptados.
+ */
+export async function fetchFriendTournaments(
+  friendId: string,
+  days = 7
+): Promise<FriendTournament[]> {
+  const supabase = getSupabaseClient();
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("tournament_results")
+    .select("id, mode, size, completed_at, top_songs")
+    .eq("user_id", friendId)
+    .gte("completed_at", since)
+    .order("completed_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`No se pudieron leer los torneos de tu amigo: ${error.message}`);
+  }
+
+  return ((data ?? []) as Array<{
+    id: string;
+    mode: string;
+    size: number;
+    completed_at: string;
+    top_songs: FriendTournamentPodiumSong[] | null;
+  }>).map((row) => ({
+    id: row.id,
+    mode: row.mode,
+    size: row.size,
+    completedAt: row.completed_at,
+    podium: Array.isArray(row.top_songs) ? row.top_songs : []
+  }));
+}
+
 /** Carga mis amigos y solicitudes (entrantes y salientes), con sus perfiles. */
 export async function fetchFriends(myId: string): Promise<FriendsData> {
   const supabase = getSupabaseClient();
