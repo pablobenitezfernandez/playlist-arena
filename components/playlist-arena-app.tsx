@@ -1407,7 +1407,7 @@ export function PlaylistArenaApp() {
           />
         ) : null}
 
-        {activeSection === "friends" ? <FriendsSection /> : null}
+        {activeSection === "friends" ? <FriendsSection songs={allSongs} /> : null}
 
         {activeSection === "songs" && newReleases.length ? (
           <section className="glass-panel rounded-[32px] p-6 sm:p-7">

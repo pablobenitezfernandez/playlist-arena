@@ -1,19 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
   acceptFriendRequest,
+  fetchFriendRatings,
   fetchFriends,
   findUserByUsername,
   removeFriendship,
   sendFriendRequest,
   type FriendsData
 } from "@/lib/friends";
+import type { PlaylistSong } from "@/lib/types";
 
 const EMPTY: FriendsData = { friends: [], incoming: [], outgoing: [] };
 
-export function FriendsSection() {
+type TopItem = { entryId: string; title: string; artists: string[]; rating: number };
+
+export function FriendsSection({ songs = [] }: { songs?: PlaylistSong[] }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
@@ -23,6 +27,49 @@ export function FriendsSection() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [openTopId, setOpenTopId] = useState<string | null>(null);
+  const [topItems, setTopItems] = useState<TopItem[] | null>(null);
+  const [topLoading, setTopLoading] = useState(false);
+
+  const songById = useMemo(() => {
+    const map = new Map<string, PlaylistSong>();
+    for (const song of songs) {
+      map.set(song.entryId, song);
+    }
+    return map;
+  }, [songs]);
+
+  const toggleTop = useCallback(
+    async (friendshipId: string, friendId: string) => {
+      if (openTopId === friendshipId) {
+        setOpenTopId(null);
+        setTopItems(null);
+        return;
+      }
+      setOpenTopId(friendshipId);
+      setTopItems(null);
+      setTopLoading(true);
+      try {
+        const ratings = await fetchFriendRatings(friendId);
+        const items: TopItem[] = [...ratings.entries()]
+          .map(([entryId, rating]) => {
+            const song = songById.get(entryId);
+            return song
+              ? { entryId, title: song.title, artists: song.artists, rating }
+              : null;
+          })
+          .filter((item): item is TopItem => item !== null)
+          .sort((a, b) => b.rating - a.rating || a.title.localeCompare(b.title))
+          .slice(0, 10);
+        setTopItems(items);
+      } catch {
+        setTopItems([]);
+      } finally {
+        setTopLoading(false);
+      }
+    },
+    [openTopId, songById]
+  );
 
   const reload = useCallback(async () => {
     if (!userId) {
@@ -223,16 +270,68 @@ export function FriendsSection() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-3">
-                        {nameOf(entry.profile)}
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmRemoveId(entry.friendshipId)}
-                          className="rounded-full border border-rose/30 px-4 py-2 text-xs font-semibold text-rose transition hover:border-rose/50 hover:bg-rose/10 disabled:opacity-50"
-                        >
-                          Eliminar
-                        </button>
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {nameOf(entry.profile)}
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleTop(entry.friendshipId, entry.profile.id)}
+                              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                                openTopId === entry.friendshipId
+                                  ? "border-glow/50 bg-glow/10 text-glowSoft"
+                                  : "border-white/12 text-white/70 hover:border-white/25 hover:text-white"
+                              }`}
+                            >
+                              {openTopId === entry.friendshipId ? "Ocultar top 10" : "Ver top 10"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setConfirmRemoveId(entry.friendshipId)}
+                              className="rounded-full border border-rose/30 px-4 py-2 text-xs font-semibold text-rose transition hover:border-rose/50 hover:bg-rose/10 disabled:opacity-50"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+
+                        {openTopId === entry.friendshipId ? (
+                          <div className="rounded-[16px] border border-white/10 bg-black/20 p-4">
+                            <p className="section-title text-[11px] text-glowSoft">
+                              Top 10 de {entry.profile.username ? `@${entry.profile.username}` : entry.profile.display_name}
+                            </p>
+                            {topLoading ? (
+                              <p className="mt-3 text-sm text-white/55">Cargando…</p>
+                            ) : !topItems || topItems.length === 0 ? (
+                              <p className="mt-3 text-sm text-white/55">
+                                Este amigo todavía no ha puntuado canciones.
+                              </p>
+                            ) : (
+                              <ol className="mt-3 space-y-1.5">
+                                {topItems.map((item, index) => (
+                                  <li
+                                    key={item.entryId}
+                                    className="flex items-center gap-3 text-sm"
+                                  >
+                                    <span className="w-5 shrink-0 text-right text-white/40">
+                                      {index + 1}
+                                    </span>
+                                    <span className="min-w-0 flex-1 truncate text-white/85">
+                                      {item.title}
+                                      {item.artists.length > 0 ? (
+                                        <span className="text-white/45"> · {item.artists.join(", ")}</span>
+                                      ) : null}
+                                    </span>
+                                    <span className="shrink-0 font-semibold text-glowSoft">
+                                      {item.rating.toFixed(1)}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ol>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </div>

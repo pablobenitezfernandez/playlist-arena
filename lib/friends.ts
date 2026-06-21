@@ -95,6 +95,29 @@ export async function removeFriendship(friendshipId: string): Promise<void> {
   }
 }
 
+/**
+ * Lee las notas de un amigo (entryId -> nota). Sirve para mostrar su top.
+ * Privacidad "blanda": la app solo construye esta vista para tus amigos
+ * aceptados; la media global del ranking sigue siendo de todos (sin cambios).
+ */
+export async function fetchFriendRatings(friendId: string): Promise<Map<string, number>> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("ratings")
+    .select("song_entry_id, rating")
+    .eq("user_id", friendId);
+
+  if (error) {
+    throw new Error(`No se pudieron leer las notas de tu amigo: ${error.message}`);
+  }
+
+  const map = new Map<string, number>();
+  for (const row of (data ?? []) as Array<{ song_entry_id: string; rating: number }>) {
+    map.set(row.song_entry_id, Number(row.rating));
+  }
+  return map;
+}
+
 /** Carga mis amigos y solicitudes (entrantes y salientes), con sus perfiles. */
 export async function fetchFriends(myId: string): Promise<FriendsData> {
   const supabase = getSupabaseClient();
