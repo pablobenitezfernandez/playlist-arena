@@ -4,11 +4,12 @@ Cómo usar Playlist Arena como usuario. Para operar el proyecto (abrir/cerrar el
 
 ## Entrar
 
-1. Abre **https://playlist-arena.vercel.app**.
+1. Abre **https://playlist-arena.vercel.app**. Verás la pantalla de bienvenida → **Iniciar sesión** o **Registrarse**.
 2. **Crea una cuenta** con email y contraseña, o inicia sesión si ya tienes.
-3. ¿Olvidaste la contraseña? Pulsa **"¿Olvidaste tu contraseña?"** en el login: te llega un email con un enlace para poner una nueva.
+3. La primera vez te pedirá elegir un **@usuario único** (sirve para que tus amigos te encuentren).
+4. ¿Olvidaste la contraseña? Pulsa **"¿Olvidaste tu contraseña?"**: te llega un email con un enlace para poner una nueva.
 
-Una vez dentro, arriba a la derecha verás tu nombre y el botón **Salir**.
+Una vez dentro, arriba a la derecha verás tu nombre, tu @usuario y el botón **Salir**. Abajo del menú hay 5 apartados: Canciones, Artistas, Torneo, Amigos y Estado de la playlist.
 
 ## 1. Canciones
 
@@ -46,14 +47,27 @@ Sirve para desempatar tus gustos enfrentando canciones.
 
 Al completar un torneo, sus victorias se suman al cómputo global que desempata el ranking.
 
-## 3. Estado de la playlist
+## 3. Artistas
+
+- Lista de todos los artistas con su **nota media** (la tuya y la de todos), según sus canciones.
+- Busca por artista y ordena por tu nota, media de todos, alfabético o nº de canciones.
+- Abre un artista para ver y puntuar **sus canciones**.
+
+## 4. Amigos
+
+- **Añadir por @usuario**: escribe el @usuario de tu amigo y dale a **Enviar solicitud**.
+- En **Solicitudes recibidas**, acepta o rechaza.
+- Tus **amigos aceptados** salen en la lista.
+- (Pronto) podrás ver el top 10 y los torneos de tus amigos.
+
+## 5. Estado de la playlist
 
 - Para la mayoría: solo lectura (ver cuántas canciones hay y la última sincronización).
 - Si eres el **dueño**, aquí está **"Administrar playlist"**: conectar Spotify, sincronizar, ver duplicadas y la última actualización. (Detalle en [GUIA.md](GUIA.md).)
 
 ## Dashboard
 
-Entra en **/dashboard** (o el botón "Ver Dashboard") para ver estadísticas: total de canciones, tu nota media y la media de todos, top por tu nota y por la media, y estadísticas de torneos.
+Entra en **/dashboard** (o el botón "Ver Dashboard") para ver estadísticas: total de canciones, tu nota media y la media de todos, el **top de la semana por victorias**, top por tu nota y por la media, y estadísticas de torneos.
 
 ## Privacidad y notas
 

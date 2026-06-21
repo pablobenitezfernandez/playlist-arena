@@ -9,16 +9,18 @@ Playlist Arena es una app web **multiusuario** sobre **una única playlist compa
 
 ## Acceso y cuentas
 
+- Pantalla de **bienvenida** ("BACHATA") → **Iniciar sesión** / **Registrarse**.
 - Registro e inicio de sesión con **email y contraseña** (Supabase Auth).
-- **Recuperar contraseña**: enlace "¿Olvidaste tu contraseña?" en el login → email con enlace → página `/reset` para poner una nueva.
+- **@usuario único**: la primera vez que entras, eliges un @usuario (minúsculas, único). Sirve para que tus amigos te añadan sin confundir nombres repetidos.
+- **Recuperar contraseña**: enlace "¿Olvidaste tu contraseña?" → email → página `/reset`.
 - Confirmación de email: configurable en Supabase; actualmente desactivada (moderación manual).
 - Roles: **dueño** (sincroniza la playlist y ve administración) y **usuarios** (leen y puntúan).
 
 ## Estructura
 
-Tras entrar, tres apartados: **Canciones**, **Torneo** y **Estado de la playlist** (Administrar playlist para el dueño).
+Tras entrar, cinco apartados: **Canciones**, **Artistas**, **Torneo**, **Amigos** y **Estado de la playlist** (Administrar playlist para el dueño).
 
-En Canciones, arriba, se muestran las **Novedades**: las 10 canciones de **lanzamiento más reciente** (con su fecha completa). Solo aparece dentro de Canciones.
+En Canciones, arriba, se muestran las **Novedades**: las 10 canciones de **lanzamiento más reciente** (con su fecha completa). Al pulsar una carátula se abre en Spotify.
 
 ## Canciones
 
@@ -44,6 +46,26 @@ Dos subapartados: **Búsqueda** y **Ranking**. (La detección de repetidas y la 
 - De `0` a `10` con **un solo decimal** (el campo no deja meter dos decimales, p. ej. `9.23` no es válido).
 - Cada nota se guarda en la base de datos asociada a tu cuenta.
 - La **media de la comunidad** se recalcula al instante (tu propia nota) y con un refresco periódico + realtime para ver las de los demás.
+
+## Artistas
+
+Apartado propio. Lista de todos los artistas de la playlist (incluye colaboraciones) con:
+- Tu **nota media** del artista y la **media de todos** (según sus canciones puntuadas).
+- Nº de canciones.
+- **Buscar** por artista y **ordenar** por: tu nota, media de todos, alfabético o nº de canciones.
+- Abrir un artista muestra **sus canciones** (puntuables, con su preview de Spotify).
+
+## Amigos
+
+Apartado para conectar con otra gente de la app (Fase 1 hecha):
+- **Añadir por @usuario**: escribes el @usuario y envías solicitud.
+- **Solicitudes recibidas**: aceptar o rechazar.
+- **Solicitudes enviadas** y **lista de amigos**.
+- (Fase 2, en curso) ver el top 10 y los torneos de tus amigos. La privacidad será **entre amigos**: tus notas/torneos solo los verán tus amigos aceptados.
+
+## Preview de Spotify
+
+En el detalle de cada canción, en el flujo "Añadir puntuación" y en cada canción del torneo hay un **reproductor oficial incrustado de Spotify** que suena la preview de 30s sin necesidad de login (para quien tenga sesión Premium en su navegador, suena entera).
 
 ## Torneo
 
@@ -85,6 +107,7 @@ Si pides un tamaño mayor que las canciones disponibles de ese grupo (p. ej. 256
 ## Dashboard (`/dashboard`)
 
 - KPIs: total de canciones, tus puntuadas, duración total, tu nota media y la **media de todos**.
+- **Top de la semana · por victorias**: canciones con más victorias en torneos de todos en los últimos 7 días.
 - Distribución de tus notas, **Top 10 por tu nota** y **Top 10 por media de todos**, estadísticas de torneos y campeones recurrentes.
 
 ## Errores controlados

@@ -9,23 +9,26 @@ Aplicación web **multiusuario** para puntuar y comparar las canciones de **una 
 
 ## Qué hace
 
-- **Login propio**: cada persona se registra con email y contraseña (Supabase Auth). Sin entrar en Spotify.
+- **Login propio**: pantalla de bienvenida ("BACHATA") → email y contraseña (Supabase Auth). Sin entrar en Spotify. Cada persona elige un **@usuario único** al entrar la primera vez.
 - **Playlist compartida**: las canciones viven en la base de datos. Las sincroniza **solo el dueño** desde Spotify; el resto solo las lee y puntúa.
-- **Dos notas por canción**: tu nota personal + la **media de todos** (con número de votos).
+- **Dos notas por canción**: tu nota personal + la **media de todos** (con número de votos). Solo 1 decimal.
 - **Ranking doble**: por tu nota o por la media de todos. Desempate por **victorias de torneo de todas las personas**.
-- **Torneos**: 1v1 o 4-way, con estrategias de selección por edad de la canción (al azar).
-- **Dashboard** (`/dashboard`): estadísticas personales y de comunidad.
+- **Artistas**: media por artista (personal y de todos), búsqueda, orden, y abrir para ver/puntuar sus canciones.
+- **Torneos**: 1v1 o 4-way, con estrategias por edad de la canción (al azar). Cada canción tiene reproductor de Spotify y "Abrir en Spotify".
+- **Amigos**: añadir por @usuario, aceptar/rechazar solicitudes. (Ver datos de amigos = Fase 2, en curso.)
+- **Preview de Spotify**: reproductor oficial incrustado (30s sin login) en el detalle, al puntuar y en el torneo.
+- **Dashboard** (`/dashboard`): estadísticas personales y de comunidad + **top semanal por victorias**.
 - **Tiempo real**: cuando alguien puntúa, la media se actualiza (refresco automático + realtime).
 
 ## Estructura de la app
 
-Al entrar (tras iniciar sesión) hay tres apartados:
+Al entrar (tras la bienvenida + login + @usuario) hay cinco apartados:
 
-1. **Canciones** — Búsqueda y Ranking.
-2. **Torneo** — montar y jugar brackets.
-3. **Estado de la playlist** — para todos es solo lectura; para el **dueño** es "Administrar playlist" (sincronizar desde Spotify, ver duplicadas y última actualización).
-
-Además, al entrar en Canciones se muestran las **Novedades** (las 10 canciones de lanzamiento más reciente).
+1. **Canciones** — Búsqueda y Ranking (+ Novedades arriba: 10 lanzamientos más recientes).
+2. **Artistas** — media y ranking por artista.
+3. **Torneo** — montar y jugar brackets.
+4. **Amigos** — añadir por @usuario, solicitudes y lista de amigos.
+5. **Estado de la playlist** — solo lectura; para el **dueño** es "Administrar playlist" (sincronizar desde Spotify, duplicadas, última actualización).
 
 ## Roles
 
@@ -36,9 +39,11 @@ Además, al entrar en Canciones se muestran las **Novedades** (las 10 canciones 
 
 | Dato | Dónde vive | Compartido |
 |---|---|---|
+| Perfiles (nombre, @usuario, is_owner) | Supabase (`profiles`) | @usuario único por persona |
 | Canciones de la playlist | Supabase (`songs`) | Sí (una copia para todos) |
-| Notas por persona | Supabase (`ratings`) | Sí (todos ven la media y quién puntuó) |
-| Victorias de torneo | Supabase (`tournament_song_wins`) | Sí (suma global para el desempate) |
+| Notas por persona | Supabase (`ratings`) | Sí (todos ven la media; las individuales pasarán a privadas entre amigos en Fase 2) |
+| Victorias de torneo | Supabase (`tournament_song_wins`) | Sí (suma global para el desempate + top semanal) |
+| Amistades | Supabase (`friendships`) | Solo las tuyas (RLS) |
 | Torneo en curso / historial de torneos | `localStorage` del navegador | No (por persona, por ahora) |
 
 ## Puesta en marcha (desarrollo)

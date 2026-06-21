@@ -1,44 +1,40 @@
 # Siguientes Pasos
 
-Estado y pendientes del proyecto. La app ya está en producción (https://playlist-arena.vercel.app) y con gente probándola.
+Estado del proyecto. En producción (https://playlist-arena.vercel.app) con gente probándolo.
 
-## Hecho
+## Hecho y desplegado
+- Multiusuario con login propio (email/contraseña) sobre Supabase + pantalla de bienvenida ("BACHATA").
+- **@usuario único** por persona (pantalla "elige tu @usuario" al entrar la primera vez).
+- Playlist compartida; sync solo del dueño (web o local).
+- Notas personales + media de la comunidad (1 decimal), tiempo real.
+- Ranking doble (tu nota / media de todos) + desempate por victorias globales.
+- Apartado **Artistas** (media y ranking por artista).
+- Torneos con estrategias por edad al azar, aviso si faltan canciones, "Abrir en Spotify".
+- **Preview de Spotify** (reproductor incrustado oficial) en detalle, al puntuar y en torneo.
+- **Dashboard** + **top semanal por victorias**.
+- **Amigos Fase 1**: añadir por @usuario, aceptar/rechazar, lista de amigos.
+- Recuperar contraseña por email (`/reset`). Optimización de rendimiento (memo).
 
-- Multiusuario con login propio (email/contraseña) sobre Supabase.
-- Playlist compartida; sincronización solo del dueño (desde la web o local).
-- Notas por persona + media de la comunidad, con actualización en tiempo real.
-- Ranking doble (tu nota / media de todos) con desempate por victorias de torneo globales.
-- Torneos con estrategias por edad al azar, aviso si faltan canciones y "Abrir en Spotify".
-- Dashboard de estadísticas leyendo de la base de datos.
-- Recuperar contraseña por email (`/reset`).
-- Validación de notas a 1 decimal, novedades en Canciones, filtro contextual, acentos.
+## En curso / próximo
+### Tweaks UI (pedidos, a montar en rama)
+- "Añadir puntuación" en Canciones: ponerlo en su **propia caja** (ahora se confunde con los filtros).
+- Amigos: botón **"Eliminar amigo"** con confirmación ("¿Seguro? Tendrás que volver a mandar solicitud para ver sus datos").
 
-## En curso / inmediato
+### Amigos Fase 2 (la grande)
+- Ver el **top 10** de cada amigo y sus **torneos de la semana** (+ posiciones).
+- Decisión tomada: **privado entre amigos**. Implica:
+  - Las notas individuales pasan a verse solo por ti + tus amigos.
+  - La **media pública** se calcula en el servidor (vista/función Postgres `song_rating_stats`), no leyendo todas las notas en el cliente.
+  - Persistir los **torneos en la base de datos** (ahora son locales por dispositivo) para poder mostrar los de los amigos.
 
-### Preview de Spotify (rama `preview-spotify`)
-- Añadir el **reproductor incrustado oficial de Spotify** (suena la preview de 30s sin login, legal) en: el detalle de la canción, el flujo "Añadir puntuación" y el torneo.
-- Motivo del embed: Spotify retiró el `preview_url` a finales de 2024, así que el play directo sobre la carátula ya casi no funciona.
-- Pendiente de implementar cuando el dueño lo indique.
-
-### Email fiable
-- La confirmación de email está desactivada porque el email gratis de Supabase está muy limitado (bloqueaba registros).
-- Para reactivarla bien: montar un SMTP propio (recomendado: **Gmail SMTP** con contraseña de aplicación, no necesita dominio) y subir el límite de emails en Supabase.
-
-## Mejoras futuras
-
-### Funcionales
-- Mover los **torneos a la base de datos** (ahora el torneo en curso y su historial son locales por persona).
-- Vista de "quién puntuó qué" más explícita (ver la nota de cada persona en una canción).
-- Más estadísticas en el dashboard (por artista, por año, evolución).
-- Exportar ranking a CSV/JSON.
-
-### Técnicas
-- Trocear `components/playlist-arena-app.tsx` (es muy grande) en secciones (`songs`, `tournament`, `admin`) y extraer hooks.
-- Pruebas unitarias de `lib/tournament.ts` y del merge de `lib/spotify.ts`.
-- Revisar el manejo de fechas de lanzamiento incompletas (solo año).
+## Más adelante
+- Email fiable: montar **Gmail SMTP** (app password, sin dominio) y reactivar la confirmación de email.
+- Trocear `components/playlist-arena-app.tsx` (es grande).
+- Paginar/virtualizar listas muy largas si vuelve a ir lento.
+- Estadísticas extra en el dashboard.
 
 ## Recordatorios de operación
-
-- `main` es lo desplegado; mientras haya testers, trabajar en ramas y publicar (merge + push) solo cuando se diga.
-- Siempre `npm run build` antes de publicar (Next falla el build con errores de lint).
-- La sincronización de la playlist actualiza la base de datos compartida al instante (no hace falta redeploy para que aparezcan canciones nuevas).
+- `main` = lo desplegado; mientras haya testers, trabajar en ramas y publicar (merge + push) solo cuando se diga.
+- Siempre `npm run build` antes de publicar.
+- Ritual de deploy seguro + rollback: ver [GUIA.md](GUIA.md) §9.
+- Cuenta de prueba: `test-claude@example.com` / `test123456` (@usuario `testclaude`).
