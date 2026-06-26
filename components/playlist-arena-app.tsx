@@ -68,6 +68,10 @@ import {
   parseReleaseDate
 } from "@/lib/utils";
 
+// Cuántas canciones se pintan de golpe en las listas largas (Búsqueda/Ranking).
+// El resto se cargan con "Ver más", para no meter las ~740 en el DOM a la vez.
+const SONGS_PAGE_SIZE = 40;
+
 type Notice = {
   tone: "success" | "error" | "info";
   message: string;
@@ -201,7 +205,7 @@ function buildDuplicateGroups(songs: PlaylistSong[]): DuplicateGroup[] {
     .filter(([, groupedSongs]) => groupedSongs.length > 1)
     .map(([key, groupedSongs]) => ({
       key,
-      label: `${groupedSongs[0]?.title ?? "Cancion"} - ${groupedSongs[0]?.artists[0] ?? "Autor"}`,
+      label: `${groupedSongs[0]?.title ?? "Canción"} - ${groupedSongs[0]?.artists[0] ?? "Autor"}`,
       songs: [...groupedSongs].sort(compareSongsAlphabetically)
     }))
     .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
@@ -233,6 +237,8 @@ export function PlaylistArenaApp() {
   const [activeSection, setActiveSection] = useState<AppSection>("songs");
   const [incomingFriendCount, setIncomingFriendCount] = useState(0);
   const [songsSection, setSongsSection] = useState<SongsSection>("search");
+  // Paginación de las listas de canciones (rendimiento: no pintar las ~740 a la vez).
+  const [visibleSongs, setVisibleSongs] = useState(SONGS_PAGE_SIZE);
   const [rankingOrder, setRankingOrder] = useState<"personal" | "community">("personal");
   const [songSortMode, setSongSortMode] = useState<SongSortMode>("alpha");
   const [auth, setAuth] = useState<SpotifyAuthSession | null>(null);
@@ -736,7 +742,7 @@ export function PlaylistArenaApp() {
         message:
           errorValue instanceof Error
             ? errorValue.message
-            : "No se pudo eliminar la cancion de la base de datos."
+            : "No se pudo eliminar la canción de la base de datos."
       });
       return;
     }
@@ -762,14 +768,14 @@ export function PlaylistArenaApp() {
       setNotice({
         tone: "info",
         message:
-          "La cancion eliminada estaba ligada al torneo actual, asi que el torneo se ha limpiado para evitar inconsistencias."
+          "La canción eliminada estaba ligada al torneo actual, así que el torneo se ha limpiado para evitar inconsistencias."
       });
       return;
     }
 
     setNotice({
       tone: "info",
-      message: `Se ha eliminado de la app la cancion "${targetSong.title}".`
+      message: `Se ha eliminado de la app la canción "${targetSong.title}".`
     });
   }
 
@@ -884,7 +890,7 @@ export function PlaylistArenaApp() {
           const champion = await applyCompletedTournamentResults(nextTournament);
           setNotice({
             tone: "success",
-            message: `${champion?.title ?? "Una cancion"} ha ganado el torneo y sus victorias internas ya se han sumado al ranking.`
+            message: `${champion?.title ?? "Una canción"} ha ganado el torneo y sus victorias internas ya se han sumado al ranking.`
           });
         } catch (saveError) {
           // Si el guardado falla, soltamos el cerrojo para poder reintentar.
@@ -1096,6 +1102,22 @@ export function PlaylistArenaApp() {
       ),
     [filteredSongs, rankingOrder]
   );
+
+  // Vuelve a la primera "página" cuando el usuario cambia de filtro/búsqueda/
+  // orden/sección (no en los refrescos automáticos de datos, que no tocan esto).
+  useEffect(() => {
+    setVisibleSongs(SONGS_PAGE_SIZE);
+  }, [
+    normalizedSongSearch,
+    ratingFilterMode,
+    parsedMinRating,
+    parsedMaxRating,
+    filterByCommunityRating,
+    songSortMode,
+    rankingOrder,
+    songsSection
+  ]);
+
   const sizeOptions = TOURNAMENT_SIZE_OPTIONS[mode];
   const currentRound = tournament ? getCurrentRound(tournament) : undefined;
   const currentMatch = tournament ? getCurrentMatch(tournament) : undefined;
@@ -1196,7 +1218,7 @@ export function PlaylistArenaApp() {
         {latestSync ? (
           <div className="space-y-6">
             <div className="rounded-[26px] border border-white/10 bg-white/5 p-5">
-              <p className="section-title text-[11px] text-glowSoft">Ultima actualizacion</p>
+              <p className="section-title text-[11px] text-glowSoft">Última actualización</p>
               <h3 className="mt-3 text-2xl font-semibold text-white">{latestSync.playlistName}</h3>
               <p className="mt-3 text-sm text-white/68">Fecha: {formatDate(latestSync.syncedAt)}</p>
               <p className="mt-2 text-sm text-white/68">
@@ -1224,7 +1246,7 @@ export function PlaylistArenaApp() {
               </div>
             ) : (
               <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                La ultima actualizacion no anadio canciones nuevas.
+                La última actualización no añadió canciones nuevas.
               </div>
             )}
 
@@ -1247,7 +1269,7 @@ export function PlaylistArenaApp() {
                     </div>
                   ) : (
                     <div className="mt-4 text-sm leading-6 text-white/50">
-                      Sin canciones nuevas en esta actualizacion.
+                      Sin canciones nuevas en esta actualización.
                     </div>
                   )}
                 </div>
@@ -1256,7 +1278,7 @@ export function PlaylistArenaApp() {
           </div>
         ) : (
           <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-            Todavia no hay historial de actualizaciones.
+            Todavía no hay historial de actualizaciones.
           </div>
         )}
       </div>
@@ -1317,10 +1339,10 @@ export function PlaylistArenaApp() {
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="glass-panel max-w-md rounded-[28px] p-8 text-center">
           <p className="section-title text-xs text-glowSoft">Playlist Arena</p>
-          <h1 className="mt-3 text-2xl font-semibold text-white">Aun no hay playlist</h1>
+          <h1 className="mt-3 text-2xl font-semibold text-white">Aún no hay playlist</h1>
           <p className="mt-3 text-sm leading-6 text-white/60">
-            El dueño todavia no ha configurado la playlist compartida. Vuelve a entrar dentro de un
-            rato: en cuanto la sincronice, apareceran todas las canciones aqui.
+            El dueño todavía no ha configurado la playlist compartida. Vuelve a entrar dentro de un
+            rato: en cuanto la sincronice, aparecerán todas las canciones aquí.
           </p>
         </div>
       </main>
@@ -1356,7 +1378,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 1</p>
+                <p className="section-title text-[11px] text-glowSoft">Opción 1</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Canciones</h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
                   Busca y puntua canciones, y mira el ranking por tu nota o por la media de todos.
@@ -1372,7 +1394,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 2</p>
+                <p className="section-title text-[11px] text-glowSoft">Opción 2</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Artistas</h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
                   La nota media de cada artista según sus canciones, con su ranking y sus temas.
@@ -1388,7 +1410,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 3</p>
+                <p className="section-title text-[11px] text-glowSoft">Opción 3</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Torneo</h2>
                 <p className="mt-3 text-sm leading-6 text-white/62">
                   Enfrentamientos 1v1 o de 4 canciones con progreso guardado y victorias acumuladas.
@@ -1404,7 +1426,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 4</p>
+                <p className="section-title text-[11px] text-glowSoft">Opción 4</p>
                 <h2 className="mt-3 flex items-center gap-2 text-2xl font-semibold text-white">
                   Amigos
                   {incomingFriendCount > 0 ? (
@@ -1432,7 +1454,7 @@ export function PlaylistArenaApp() {
                     : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <p className="section-title text-[11px] text-glowSoft">Opcion 5</p>
+                <p className="section-title text-[11px] text-glowSoft">Opción 5</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">
                   {isOwner ? "Administrar playlist" : "Estado de la playlist"}
                 </h2>
@@ -1479,10 +1501,10 @@ export function PlaylistArenaApp() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="section-title text-[11px] text-glowSoft">Novedades</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Ultimos lanzamientos</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Últimos lanzamientos</h2>
               </div>
               <span className="text-xs text-white/45">
-                Las 10 canciones mas recientes por fecha de salida
+                Las 10 canciones más recientes por fecha de salida
               </span>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -1573,7 +1595,7 @@ export function PlaylistArenaApp() {
                   <h2 className="mt-3 text-3xl font-semibold text-white">Libreria compartida</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
                     Busca y puntua las canciones de la playlist. Ordena por fecha, alfabetico o por
-                    ranking (tu nota o la media de todos), y mira las novedades de ultimos lanzamientos.
+                    ranking (tu nota o la media de todos), y mira las novedades de últimos lanzamientos.
                   </p>
                 </div>
 
@@ -1625,7 +1647,7 @@ export function PlaylistArenaApp() {
                           : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:bg-white/10"
                       }`}
                     >
-                      Busqueda
+                      Búsqueda
                     </button>
                     <button
                       type="button"
@@ -1661,7 +1683,7 @@ export function PlaylistArenaApp() {
                       </label>
                       {searchSongs.length ? (
                         <div className="space-y-4">
-                          {searchSongs.map((song) => (
+                          {searchSongs.slice(0, visibleSongs).map((song) => (
                             <SongLibraryItem
                               key={song.entryId}
                               song={song}
@@ -1676,6 +1698,15 @@ export function PlaylistArenaApp() {
                               onDeleteArchived={handleDeleteRemovedSong}
                             />
                           ))}
+                          {searchSongs.length > visibleSongs ? (
+                            <button
+                              type="button"
+                              onClick={() => setVisibleSongs((n) => n + SONGS_PAGE_SIZE)}
+                              className="w-full rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-white"
+                            >
+                              Ver más ({searchSongs.length - visibleSongs} restantes)
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
@@ -1722,10 +1753,10 @@ export function PlaylistArenaApp() {
                       </div>
                       {rankingSongs.length ? (
                         <div className="space-y-4">
-                          {rankingSongs.map((song, index) => (
+                          {rankingSongs.slice(0, visibleSongs).map((song, index) => (
                             <div key={song.entryId} className="space-y-2">
                               <div className="flex items-center justify-between px-2 text-xs uppercase tracking-[0.2em] text-white/40">
-                                <span>Posicion #{index + 1}</span>
+                                <span>Posición #{index + 1}</span>
                                 <span>
                                   Tu {formatRating(song.userRating)} | Media{" "}
                                   {song.communityRating === null
@@ -1748,6 +1779,15 @@ export function PlaylistArenaApp() {
                               />
                             </div>
                           ))}
+                          {rankingSongs.length > visibleSongs ? (
+                            <button
+                              type="button"
+                              onClick={() => setVisibleSongs((n) => n + SONGS_PAGE_SIZE)}
+                              className="w-full rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-white"
+                            >
+                              Ver más ({rankingSongs.length - visibleSongs} restantes)
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         <div className="rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
@@ -1828,7 +1868,7 @@ export function PlaylistArenaApp() {
 
                     <label className="block space-y-2">
                       <span className="section-title text-[11px] text-white/45">
-                        Estrategia de seleccion
+                        Estrategia de selección
                       </span>
                       <select
                         value={strategy}
@@ -1894,7 +1934,7 @@ export function PlaylistArenaApp() {
                       {tournament
                         ? tournament.completed
                           ? "Ya hay campeona. Puedes revisar el historial o reiniciar el bracket."
-                          : "Elige una ganadora en cada enfrentamiento. El progreso se guarda automaticamente, pero las victorias internas solo se aplican cuando terminas el torneo."
+                          : "Elige una ganadora en cada enfrentamiento. El progreso se guarda automáticamente, pero las victorias internas solo se aplican cuando terminas el torneo."
                         : "Crea un torneo cuando ya tengas canciones sincronizadas."}
                     </p>
                   </div>
@@ -1933,7 +1973,7 @@ export function PlaylistArenaApp() {
                   <div className="mt-8 rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8">
                     <p className="text-xl font-semibold text-white">Listo para empezar</p>
                     <p className="mt-3 text-sm leading-6 text-white/60">
-                      Elige modo, tamano y estrategia de seleccion desde el panel izquierdo.
+                      Elige modo, tamaño y estrategia de selección desde el panel izquierdo.
                     </p>
                   </div>
                 ) : null}
@@ -1951,7 +1991,7 @@ export function PlaylistArenaApp() {
                           </h3>
                           <p className="mt-2 text-sm text-white/62">
                             {tournament.groupSize === 2
-                              ? "Elige una cancion para avanzar."
+                              ? "Elige una canción para avanzar."
                               : "Elige solo una ganadora entre las cuatro."}
                           </p>
                         </div>
@@ -1972,7 +2012,7 @@ export function PlaylistArenaApp() {
                               ? index === 0
                                 ? "Contendiente izquierda"
                                 : "Contendiente derecha"
-                              : `Posicion ${index + 1}`
+                              : `Posición ${index + 1}`
                           }
                         />
                       ))}
@@ -2009,7 +2049,7 @@ export function PlaylistArenaApp() {
                         <p className="section-title text-[11px] text-white/40">Detalles</p>
                         <dl className="mt-5 grid gap-4 sm:grid-cols-2">
                           <div>
-                            <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Album</dt>
+                            <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Álbum</dt>
                             <dd className="mt-1 text-lg text-white">{champion.album}</dd>
                           </div>
                           <div>
@@ -2026,7 +2066,7 @@ export function PlaylistArenaApp() {
                           </div>
                           <div>
                             <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                              Ganadas aqui
+                              Ganadas aquí
                             </dt>
                             <dd className="mt-1 text-lg text-white">
                               {currentTournamentWinCounts.get(champion.entryId) ?? 0}
@@ -2068,7 +2108,7 @@ export function PlaylistArenaApp() {
                                 Ronda {entry.round} Enfrentamiento {entry.matchNumber}
                               </p>
                               <p className="mt-2 text-lg font-semibold text-white">
-                                Ganadora: {winner?.title ?? "Cancion desconocida"}
+                                Ganadora: {winner?.title ?? "Canción desconocida"}
                               </p>
                               <p className="mt-1 text-sm text-white/58">
                                 {winner?.artists.join(", ") ?? "Artista desconocido"}
@@ -2085,7 +2125,7 @@ export function PlaylistArenaApp() {
                   </div>
                 ) : (
                   <div className="mt-8 rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                    No hay enfrentamientos jugados todavia.
+                    No hay enfrentamientos jugados todavía.
                   </div>
                 )}
               </div>
@@ -2098,7 +2138,7 @@ export function PlaylistArenaApp() {
                       Historial de torneos
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-                      Aqui se guardan solo los torneos completados. Si sales o reinicias uno a
+                      Aquí se guardan solo los torneos completados. Si sales o reinicias uno a
                       medias, no se registra en este historial ni suma victorias internas.
                     </p>
                   </div>
@@ -2325,7 +2365,7 @@ export function PlaylistArenaApp() {
                       </div>
                       <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                         <dt className="section-title text-[11px] text-white/40">
-                          Ultima actualizacion
+                          Última actualización
                         </dt>
                         <dd className="mt-2 text-sm text-white/75">
                           {formatDate(playlist.lastSyncedAt)}
@@ -2341,7 +2381,7 @@ export function PlaylistArenaApp() {
                   </div>
                 ) : (
                   <p className="mt-6 rounded-[24px] border border-dashed border-white/12 bg-white/5 p-5 text-sm leading-6 text-white/58">
-                    Aun no has sincronizado ninguna playlist. Cuando lo hagas, aqui veras el resumen
+                    Aún no has sincronizado ninguna playlist. Cuando lo hagas, aquí verás el resumen
                     local y los datos basicos importados.
                   </p>
                 )}
@@ -2353,7 +2393,7 @@ export function PlaylistArenaApp() {
                 <div className="glass-panel rounded-[32px] p-6 sm:p-8">
                   <p className="section-title text-[11px] text-glowSoft">Solo dueño</p>
                   <h2 className="mt-3 text-3xl font-semibold text-white">
-                    Canciones de la ultima actualizacion
+                    Canciones de la última actualización
                   </h2>
                   <div className="mt-6">{renderLatestUpdate()}</div>
                 </div>

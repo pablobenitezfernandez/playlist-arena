@@ -120,23 +120,24 @@ export async function fetchFriendRatings(friendId: string): Promise<Map<string, 
 
 export type FriendTournamentPodiumSong = {
   entryId: string;
-  title: string;
-  artists: string[];
   wins: number;
 };
 
 export type FriendTournament = {
   id: string;
-  mode: string;
-  size: number;
   completedAt: string;
-  podium: FriendTournamentPodiumSong[]; // top 3, en orden
+  podium: FriendTournamentPodiumSong[]; // top 3 por victorias (el título se resuelve en la UI)
 };
 
 /**
- * Lee los torneos completados de un amigo en los últimos `days` días
- * (resultado final: campeón + top 3). La RLS solo deja leer esto si sois
- * amigos aceptados.
+ * Lee los torneos completados de un amigo en los últimos `days` días y
+ * reconstruye su podio (top 3) a partir de las **victorias** de cada canción.
+ *
+ * Se lee de `tournament_song_wins` (no de `tournament_results`) porque las
+ * victorias se guardan SIEMPRE al completar un torneo y existen desde el
+ * principio; así se ven también los torneos anteriores a la vista de amigos y
+ * no depende de una segunda escritura. (Lectura global por RLS; la app solo
+ * construye esta vista para amigos aceptados.)
  */
 export async function fetchFriendTournaments(
   friendId: string,
@@ -146,29 +147,46 @@ export async function fetchFriendTournaments(
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
-    .from("tournament_results")
-    .select("id, mode, size, completed_at, top_songs")
+    .from("tournament_song_wins")
+    .select("tournament_id, song_entry_id, wins, created_at")
     .eq("user_id", friendId)
-    .gte("completed_at", since)
-    .order("completed_at", { ascending: false });
+    .gte("created_at", since);
 
   if (error) {
     throw new Error(`No se pudieron leer los torneos de tu amigo: ${error.message}`);
   }
 
-  return ((data ?? []) as Array<{
-    id: string;
-    mode: string;
-    size: number;
-    completed_at: string;
-    top_songs: FriendTournamentPodiumSong[] | null;
-  }>).map((row) => ({
-    id: row.id,
-    mode: row.mode,
-    size: row.size,
-    completedAt: row.completed_at,
-    podium: Array.isArray(row.top_songs) ? row.top_songs : []
-  }));
+  // Agrupa las victorias por torneo y arma el podio de cada uno.
+  const byTournament = new Map<
+    string,
+    { createdAt: string; songs: FriendTournamentPodiumSong[] }
+  >();
+
+  for (const row of (data ?? []) as Array<{
+    tournament_id: string;
+    song_entry_id: string;
+    wins: number;
+    created_at: string;
+  }>) {
+    const group = byTournament.get(row.tournament_id) ?? {
+      createdAt: row.created_at,
+      songs: []
+    };
+    group.songs.push({ entryId: row.song_entry_id, wins: Number(row.wins) });
+    if (row.created_at < group.createdAt) {
+      group.createdAt = row.created_at;
+    }
+    byTournament.set(row.tournament_id, group);
+  }
+
+  return [...byTournament.entries()]
+    .map(([id, group]) => ({
+      id,
+      completedAt: group.createdAt,
+      podium: group.songs.sort((a, b) => b.wins - a.wins).slice(0, 3)
+    }))
+    .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+    .slice(0, 10); // como mucho, los 10 torneos más recientes de la ventana
 }
 
 /**

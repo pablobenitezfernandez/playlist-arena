@@ -53,7 +53,7 @@ export function SongCard({ song, onSelect, accentLabel }: SongCardProps) {
           </div>
           <dl className="grid gap-3 text-sm text-white/65">
             <div>
-              <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Album</dt>
+              <dt className="text-[11px] uppercase tracking-[0.2em] text-white/35">Álbum</dt>
               <dd className="mt-1">{song.album}</dd>
             </div>
           </dl>

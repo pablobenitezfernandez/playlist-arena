@@ -134,11 +134,11 @@ export function SongRatingFlow({
               className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-glow/50 focus:ring-2 focus:ring-glow/20"
             />
             <span className="mt-2 block text-[11px] text-white/40">
-              De 0 a 10, con un decimal como maximo (ej. 8.7).
+              De 0 a 10, con un decimal como máximo (ej. 8.7).
             </span>
             {showRatingHint ? (
               <span className="mt-1 block text-[11px] text-rose">
-                Nota no valida: usa 0-10 con un solo decimal.
+                Nota no válida: usa 0-10 con un solo decimal.
               </span>
             ) : null}
           </label>

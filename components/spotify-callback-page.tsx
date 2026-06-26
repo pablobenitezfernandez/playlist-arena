@@ -12,7 +12,7 @@ export function SpotifyCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status] = useState<CallbackStatus>({
-    message: "Terminando la conexion con Spotify..."
+    message: "Terminando la conexión con Spotify..."
   });
 
   useEffect(() => {
@@ -34,14 +34,14 @@ export function SpotifyCallbackPage() {
 
       if (error) {
         pkceStorage.clear();
-        redirectWithError(`Spotify devolvio este error durante el login: ${error}.`);
+        redirectWithError(`Spotify devolvió este error durante el login: ${error}.`);
         return;
       }
 
       if (!code || !state || !pkce || pkce.state !== state) {
         pkceStorage.clear();
         redirectWithError(
-          "El callback de Spotify no coincide con la sesion PKCE guardada. Vuelve a intentarlo."
+          "El callback de Spotify no coincide con la sesión PKCE guardada. Vuelve a intentarlo."
         );
         return;
       }

@@ -176,8 +176,8 @@ export function FriendsSection({
         <p className="section-title text-[11px] text-glowSoft">Amigos</p>
         <h2 className="mt-3 text-3xl font-semibold text-white">Tus amigos</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-          Añade a gente por su @usuario. Cuando os acepteis, pronto podras ver sus tops y sus
-          torneos. (De momento, gestion de amistades.)
+          Añade a gente por su @usuario. Cuando os aceptéis, podrás ver sus tops y sus
+          torneos en su perfil.
         </p>
 
         <form onSubmit={handleAdd} className="mt-6 flex flex-wrap items-end gap-3">
@@ -383,29 +383,30 @@ export function FriendsSection({
                                         className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3"
                                       >
                                         <div className="flex items-center justify-between gap-2 text-xs text-white/45">
-                                          <span className="uppercase tracking-[0.08em]">
-                                            {tournament.mode} · {tournament.size}
-                                          </span>
+                                          <span className="uppercase tracking-[0.08em]">Torneo</span>
                                           <span>{formatTournamentDate(tournament.completedAt)}</span>
                                         </div>
                                         {tournament.podium.length > 0 ? (
                                           <ol className="mt-2 space-y-1">
-                                            {tournament.podium.map((song, index) => (
-                                              <li
-                                                key={song.entryId}
-                                                className="flex items-center gap-2 text-sm"
-                                              >
-                                                <span className="shrink-0">
-                                                  {["🥇", "🥈", "🥉"][index] ?? `${index + 1}.`}
-                                                </span>
-                                                <span className="min-w-0 flex-1 truncate text-white/85">
-                                                  {song.title}
-                                                  {song.artists.length > 0 ? (
-                                                    <span className="text-white/45"> · {song.artists.join(", ")}</span>
-                                                  ) : null}
-                                                </span>
-                                              </li>
-                                            ))}
+                                            {tournament.podium.map((pod, index) => {
+                                              const song = songById.get(pod.entryId);
+                                              return (
+                                                <li
+                                                  key={pod.entryId}
+                                                  className="flex items-center gap-2 text-sm"
+                                                >
+                                                  <span className="shrink-0">
+                                                    {["🥇", "🥈", "🥉"][index] ?? `${index + 1}.`}
+                                                  </span>
+                                                  <span className="min-w-0 flex-1 truncate text-white/85">
+                                                    {song ? song.title : "Canción"}
+                                                    {song && song.artists.length > 0 ? (
+                                                      <span className="text-white/45"> · {song.artists.join(", ")}</span>
+                                                    ) : null}
+                                                  </span>
+                                                </li>
+                                              );
+                                            })}
                                           </ol>
                                         ) : null}
                                       </div>

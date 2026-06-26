@@ -119,7 +119,7 @@ function SongLibraryItemImpl({
         <div className="border-t border-white/8 px-4 py-5">
           <div className="grid gap-4 text-sm text-white/72 sm:grid-cols-2 xl:grid-cols-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Album</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Álbum</p>
               <p className="mt-1">{song.album}</p>
             </div>
             <div>
@@ -135,7 +135,7 @@ function SongLibraryItemImpl({
               <p className="mt-1">{formatReleaseDateFull(song.releaseDate)}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Duracion</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Duración</p>
               <p className="mt-1">{formatDuration(song.durationMs)}</p>
             </div>
             <div>
@@ -144,7 +144,7 @@ function SongLibraryItemImpl({
               </p>
               <p className="mt-1">
                 {song.communityRating === null
-                  ? "Sin notas todavia"
+                  ? "Sin notas todavía"
                   : `${formatRating(song.communityRating)} (${song.communityRatingCount} ${
                       song.communityRatingCount === 1 ? "voto" : "votos"
                     })`}
@@ -159,7 +159,7 @@ function SongLibraryItemImpl({
             <div>
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">Estado</p>
               <p className="mt-1">
-                {song.isInActivePlaylist ? "Sigue en la playlist" : "Ya no esta en la playlist"}
+                {song.isInActivePlaylist ? "Sigue en la playlist" : "Ya no está en la playlist"}
               </p>
             </div>
           </div>
@@ -174,7 +174,7 @@ function SongLibraryItemImpl({
           <div className="mt-5 flex flex-wrap items-end gap-3">
             <label className="min-w-[190px] flex-1">
               <span className="text-[11px] uppercase tracking-[0.2em] text-white/38">
-                Puntuacion personal
+                Puntuación personal
               </span>
               <input
                 type="text"
@@ -186,7 +186,7 @@ function SongLibraryItemImpl({
               />
               {showRatingHint ? (
                 <span className="mt-1 block text-[11px] text-rose">
-                  Nota no valida: usa 0-10 con un solo decimal.
+                  Nota no válida: usa 0-10 con un solo decimal.
                 </span>
               ) : null}
             </label>
