@@ -1363,107 +1363,107 @@ export function PlaylistArenaApp() {
                 Tu playlist, tus notas, tus torneos.
               </h1>
               <p className="text-base leading-7 text-white/72 sm:text-lg">
-                Entra, puntua las canciones de la playlist y compara: tu nota personal y la media de
+                Entra, puntúa las canciones de la playlist y compara: tu nota personal y la media de
                 todos. Monta torneos para desempatar y mira el ranking que sale entre todos.
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <button
-                type="button"
-                onClick={() => setActiveSection("songs")}
-                className={`rounded-[28px] border p-5 text-left transition ${
-                  activeSection === "songs"
-                    ? "border-glow/35 bg-glow/12"
-                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <p className="section-title text-[11px] text-glowSoft">Opción 1</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Canciones</h2>
-                <p className="mt-3 text-sm leading-6 text-white/62">
-                  Busca y puntua canciones, y mira el ranking por tu nota o por la media de todos.
-                </p>
-              </button>
+            <div className="space-y-4">
+              <p className="section-title text-[11px] text-white/45">
+                Apartados · toca uno para entrar
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("songs")}
+                  className={`rounded-[28px] border p-5 text-left transition ${
+                    activeSection === "songs"
+                      ? "border-glow/35 bg-glow/12"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <h2 className="text-2xl font-semibold text-white">Canciones</h2>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    Pon tu nota a cada canción y mira el ranking: por tu nota o por la media de todos.
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSection("artists")}
-                className={`rounded-[28px] border p-5 text-left transition ${
-                  activeSection === "artists"
-                    ? "border-glow/35 bg-glow/12"
-                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <p className="section-title text-[11px] text-glowSoft">Opción 2</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Artistas</h2>
-                <p className="mt-3 text-sm leading-6 text-white/62">
-                  La nota media de cada artista según sus canciones, con su ranking y sus temas.
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("artists")}
+                  className={`rounded-[28px] border p-5 text-left transition ${
+                    activeSection === "artists"
+                      ? "border-glow/35 bg-glow/12"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <h2 className="text-2xl font-semibold text-white">Artistas</h2>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    Mira qué artistas te gustan más y puntúa todas sus canciones de un tirón.
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSection("tournament")}
-                className={`rounded-[28px] border p-5 text-left transition ${
-                  activeSection === "tournament"
-                    ? "border-glow/35 bg-glow/12"
-                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <p className="section-title text-[11px] text-glowSoft">Opción 3</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Torneo</h2>
-                <p className="mt-3 text-sm leading-6 text-white/62">
-                  Enfrentamientos 1v1 o de 4 canciones con progreso guardado y victorias acumuladas.
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("tournament")}
+                  className={`rounded-[28px] border p-5 text-left transition ${
+                    activeSection === "tournament"
+                      ? "border-glow/35 bg-glow/12"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <h2 className="text-2xl font-semibold text-white">Torneo</h2>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    Enfrenta canciones y elige tu favorita en cada duelo. La ganadora sube en el ranking.
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSection("friends")}
-                className={`rounded-[28px] border p-5 text-left transition ${
-                  activeSection === "friends"
-                    ? "border-glow/35 bg-glow/12"
-                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <p className="section-title text-[11px] text-glowSoft">Opción 4</p>
-                <h2 className="mt-3 flex items-center gap-2 text-2xl font-semibold text-white">
-                  Amigos
-                  {incomingFriendCount > 0 ? (
-                    <span
-                      className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-glow px-1.5 text-xs font-bold text-ink"
-                      title={`${incomingFriendCount} solicitud(es) pendiente(s)`}
-                    >
-                      {incomingFriendCount}
-                    </span>
-                  ) : null}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-white/62">
-                  {incomingFriendCount > 0
-                    ? `Tienes ${incomingFriendCount} solicitud(es) de amistad pendiente(s).`
-                    : "Añade amigos por su @usuario y acepta solicitudes."}
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("friends")}
+                  className={`rounded-[28px] border p-5 text-left transition ${
+                    activeSection === "friends"
+                      ? "border-glow/35 bg-glow/12"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <h2 className="flex items-center gap-2 text-2xl font-semibold text-white">
+                    Amigos
+                    {incomingFriendCount > 0 ? (
+                      <span
+                        className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-glow px-1.5 text-xs font-bold text-ink"
+                        title={`${incomingFriendCount} solicitud(es) pendiente(s)`}
+                      >
+                        {incomingFriendCount}
+                      </span>
+                    ) : null}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    {incomingFriendCount > 0
+                      ? `Tienes ${incomingFriendCount} solicitud(es) de amistad pendiente(s).`
+                      : "Añade gente por su @usuario y mira su top 10 y sus torneos."}
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSection("updates")}
-                className={`rounded-[28px] border p-5 text-left transition ${
-                  activeSection === "updates"
-                    ? "border-glow/35 bg-glow/12"
-                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <p className="section-title text-[11px] text-glowSoft">Opción 5</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">
-                  {isOwner ? "Administrar playlist" : "Estado de la playlist"}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-white/62">
-                  {isOwner
-                    ? "Sincroniza la playlist desde Spotify a la base de datos compartida y revisa el historial."
-                    : "Mira el estado de la playlist compartida y el historial de actualizaciones."}
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("updates")}
+                  className={`rounded-[28px] border p-5 text-left transition ${
+                    activeSection === "updates"
+                      ? "border-glow/35 bg-glow/12"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  }`}
+                >
+                  <h2 className="text-2xl font-semibold text-white">
+                    {isOwner ? "Administrar playlist" : "Estado de la playlist"}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    {isOwner
+                      ? "Conecta Spotify, sincroniza la playlist y revisa duplicadas e historial."
+                      : "Mira cuántas canciones hay y cuándo se actualizó la playlist por última vez."}
+                  </p>
+                </button>
+              </div>
             </div>
 
             <div className="flex">
@@ -1476,7 +1476,7 @@ export function PlaylistArenaApp() {
                   color: "rgba(30,215,96,0.85)"
                 }}
               >
-                <span>📊</span> Ver Dashboard
+                <span>📊</span> Ver estadísticas y tops
               </Link>
             </div>
           </div>
@@ -1592,10 +1592,11 @@ export function PlaylistArenaApp() {
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="section-title text-[11px] text-glowSoft">Canciones</p>
-                  <h2 className="mt-3 text-3xl font-semibold text-white">Libreria compartida</h2>
+                  <h2 className="mt-3 text-3xl font-semibold text-white">Librería compartida</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-                    Busca y puntua las canciones de la playlist. Ordena por fecha, alfabetico o por
-                    ranking (tu nota o la media de todos), y mira las novedades de últimos lanzamientos.
+                    Aquí está toda la playlist. Ponle nota a cada canción (de 0 a 10) y, abajo,
+                    cámbiate a <strong className="font-semibold text-white/80">Ranking</strong> para
+                    ver el orden por tu nota o por la media de todos. Busca y ordena como quieras.
                   </p>
                 </div>
 
@@ -1623,7 +1624,7 @@ export function PlaylistArenaApp() {
 
               {!playlist ? (
                 <div className="mt-8 rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center">
-                  <p className="text-xl font-semibold text-white">Todavia no hay canciones locales</p>
+                  <p className="text-xl font-semibold text-white">Todavía no hay canciones locales</p>
                   <p className="mt-3 text-sm leading-6 text-white/60">
                     Primero entra en `Actualizar datos`, conecta Spotify y sincroniza tu playlist.
                   </p>
@@ -1641,24 +1642,30 @@ export function PlaylistArenaApp() {
                     <button
                       type="button"
                       onClick={() => setSongsSection("search")}
-                      className={`rounded-[22px] border px-4 py-3 text-sm font-semibold transition ${
+                      className={`rounded-[22px] border px-4 py-3 text-left transition ${
                         songsSection === "search"
                           ? "border-glow/35 bg-glow/12 text-white"
                           : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:bg-white/10"
                       }`}
                     >
-                      Búsqueda
+                      <span className="block text-sm font-semibold">Búsqueda</span>
+                      <span className="mt-0.5 block text-xs text-white/50">
+                        Encuentra una canción y ponle nota.
+                      </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSongsSection("ranking")}
-                      className={`rounded-[22px] border px-4 py-3 text-sm font-semibold transition ${
+                      className={`rounded-[22px] border px-4 py-3 text-left transition ${
                         songsSection === "ranking"
                           ? "border-glow/35 bg-glow/12 text-white"
                           : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:bg-white/10"
                       }`}
                     >
-                      Ranking
+                      <span className="block text-sm font-semibold">Ranking</span>
+                      <span className="mt-0.5 block text-xs text-white/50">
+                        Las canciones ordenadas, de mejor a peor nota.
+                      </span>
                     </button>
                   </div>
 
@@ -1748,8 +1755,8 @@ export function PlaylistArenaApp() {
                       </div>
                       <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/66">
                         {rankingOrder === "personal"
-                          ? "Ordenado por TU nota personal. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabetico."
-                          : "Ordenado por la MEDIA de las notas de todos. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabetico."}
+                          ? "Ordenado por TU nota personal. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabético."
+                          : "Ordenado por la MEDIA de las notas de todos. Desempata por victorias en torneos (de todas las personas) y, si sigue empate, por orden alfabético."}
                       </div>
                       {rankingSongs.length ? (
                         <div className="space-y-4">
@@ -1808,7 +1815,12 @@ export function PlaylistArenaApp() {
             <aside className="space-y-6">
               <section className="glass-panel rounded-[32px] p-6">
                 <p className="section-title text-[11px] text-glowSoft">Torneo</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Configurar bracket</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-white">Monta tu torneo</h2>
+                <p className="mt-3 text-sm leading-6 text-white/60">
+                  Te enfrento canciones de dos en dos (o de cuatro): elige tu favorita en cada duelo y
+                  avanza la ganadora, hasta que quede una campeona. Sus victorias ayudan a desempatar
+                  el ranking. Elige el modo y empieza.
+                </p>
 
                 {!playlist ? (
                   <p className="mt-6 rounded-[24px] border border-dashed border-white/12 bg-white/5 p-5 text-sm leading-6 text-white/58">
@@ -2231,7 +2243,7 @@ export function PlaylistArenaApp() {
                   </div>
                 ) : (
                   <div className="mt-8 rounded-[28px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm text-white/58">
-                    Todavia no hay torneos completados guardados.
+                    Todavía no hay torneos completados guardados.
                   </div>
                 )}
               </div>
