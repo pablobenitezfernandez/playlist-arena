@@ -21,6 +21,7 @@ Al entrar en **Canciones** verás arriba las **Novedades** (las 10 canciones de 
 - **Ordenar por**: fecha añadida, fecha de salida, alfabético, ranking (tu nota) o ranking global (media de todos).
 - Filtros: estado de nota y nota mínima/máxima. La nota mín/máx se aplica sobre **tu nota** o sobre la **media de todos** según estés viendo el ranking global o no (lo dice la etiqueta).
 - Abre cualquier canción para ver sus datos, **tu nota**, la **media de todos** (con nº de votos) y abrirla en Spotify.
+- La lista muestra **40 canciones**; pulsa **"Ver más"** abajo para cargar las siguientes (así va fluido).
 - Botón **AÑADIR PUNTUACIÓN**: te muestra una canción que aún no has puntuado, **al azar**, y pasa a otra al guardar. Solo te enseña las que no tienes puntuadas.
 
 ### Ranking
@@ -58,7 +59,7 @@ Al completar un torneo, sus victorias se suman al cómputo global que desempata 
 - **Añadir por @usuario**: escribe el @usuario de tu amigo y dale a **Enviar solicitud**.
 - En **Solicitudes recibidas**, acepta o rechaza. Cuando tengas solicitudes pendientes, verás un **puntito con el número** en la tarjeta "Amigos" del menú.
 - Tus **amigos aceptados** salen en la lista. En cada uno:
-  - **Ver perfil**: muestra su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (🥇🥈🥉).
+  - **Ver perfil**: muestra su **top 10** de canciones (sus mejores notas) y sus **torneos recientes** con el podio (🥇🥈🥉).
   - **Eliminar**: deja de ser su amigo (con confirmación). Tendrás que volver a mandar solicitud para ver de nuevo sus datos.
 
 ## 5. Estado de la playlist

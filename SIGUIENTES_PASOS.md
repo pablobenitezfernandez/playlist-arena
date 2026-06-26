@@ -18,6 +18,10 @@ Estado del proyecto. En producción (https://playlist-arena.vercel.app) con gent
 - **Reproductor de Spotify coordinado**: al darle play a una canción, las demás se **pausan solas** (vía IFrame API; arregla el solape en móvil).
 - "Añadir puntuación" en su **propia caja** dentro de Canciones.
 - **Fix de victorias de torneo duplicadas** (el doble-disparo al completar ya no duplica).
+- **Torneos de amigos desde las victorias**: la vista de amigos reconstruye el podio desde `tournament_song_wins` (siempre guardadas), así se ven **todos** los torneos, también los anteriores a la función. Etiqueta: "Torneo" + fecha + podio.
+- **Paginación** de las listas de canciones (40 + "Ver más"); mucho más fluido en móvil.
+- **Tildes y ñ** corregidas en toda la interfaz.
+- **Orientación/copy**: menú sin "Opción 1-5" (confundía), descripciones claras de qué hace cada apartado, "Ver estadísticas y tops", e intros explicativas en Canciones y Torneo.
 - Recuperar contraseña por email (`/reset`). Optimización de rendimiento (memo).
 
 ### Privacidad de Amigos — decisión tomada
@@ -27,10 +31,11 @@ Estado del proyecto. En producción (https://playlist-arena.vercel.app) con gent
 ## Más adelante
 - **Privacidad dura (Opción B)** — solo si se abre a desconocidos.
 - **Candado en BD para victorias**: `unique(user_id, tournament_id, song_entry_id)` en `tournament_song_wins` (defensa extra; el doble-disparo ya está resuelto en el cliente).
-- Email fiable: montar **Gmail SMTP** (app password, sin dominio) y reactivar la confirmación de email.
+- Email fiable: montar **Gmail SMTP** (app password, sin dominio) y reactivar la confirmación. (Por ahora el dueño aprueba cada cuenta a mano en Supabase; el grupo es de ~40 personas.)
 - Trocear `components/playlist-arena-app.tsx` (es grande).
-- Paginar/virtualizar listas muy largas si vuelve a ir lento.
+- Virtualizar las listas si la paginación de 40 se queda corta.
 - Estadísticas extra en el dashboard.
+- Opcionales de la auditoría externa (2026-06-26) **descartados por ahora** (app para ~40 amigos, no busca escalar): 404 con marca, favicon, OG tags, Sentry/analytics, toggle ver-contraseña.
 
 ## Recordatorios de operación
 - `main` = lo desplegado; mientras haya testers, trabajar en ramas y publicar (merge + push) solo cuando se diga.

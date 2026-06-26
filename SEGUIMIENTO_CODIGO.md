@@ -15,7 +15,7 @@ Registro técnico: arquitectura, mapa de archivos y estado. Complementa a [FUNCI
 - `tournament_song_wins` — victorias de torneo por persona/canción, con `created_at` (desempate global + top semanal).
 - `playlist_meta` — datos de la playlist (1 fila).
 - `friendships` — solicitudes/amigos: `requester_id`, `addressee_id`, `status` (pending|accepted). RLS: ves/gestionas solo las tuyas; solo el destinatario acepta; cualquiera borra.
-- `tournament_results` — resultado FINAL de cada torneo completado (campeón + top 3 en `top_songs` jsonb, modo, tamaño, `completed_at`). `unique(user_id, tournament_id)`. RLS: lees los tuyos **y los de tus amigos aceptados**; insertas/borras solo los tuyos. Para "torneos de la semana de tus amigos" (Fase 2).
+- `tournament_results` — resultado FINAL de cada torneo (campeón + top 3 jsonb). Se sigue escribiendo al completar un torneo, pero **ya NO se lee** para la vista de amigos (ver abajo): la vista de torneos de amigos se reconstruye desde `tournament_song_wins`, que es más fiable. Queda como dato/posible uso futuro.
 - Realtime activo en `ratings` y `tournament_song_wins`.
 
 ## Mapa de archivos
@@ -23,7 +23,7 @@ Registro técnico: arquitectura, mapa de archivos y estado. Complementa a [FUNCI
 - `layout.tsx` (envuelve en `AuthProvider`), `page.tsx` (`AuthGate` + `PlaylistArenaApp`), `dashboard/page.tsx`, `reset/page.tsx` (contraseña nueva), `callback/page.tsx` (OAuth Spotify).
 
 ### Componentes (`components/`)
-- `playlist-arena-app.tsx` — componente central. Nav de 5 secciones (Canciones/Artistas/Torneo/Amigos/Estado), filtros, orden, ranking, novedades, torneo, sync. Derivaciones memoizadas (useMemo). El menú **Amigos** muestra un **puntito** con el nº de solicitudes pendientes (sondeo 30s + sync al aceptar/rechazar). Al completar un torneo guarda victorias **y** resultado final; el cierre del torneo se persiste ANTES de guardar + un `finalizingTournamentRef` evita el doble-disparo que duplicaba victorias.
+- `playlist-arena-app.tsx` — componente central. Nav de 5 secciones (tarjetas con nombre + descripción clara, **sin** las viejas etiquetas "Opción N"; copy de orientación). Filtros, orden, ranking, novedades, torneo, sync. Derivaciones memoizadas (useMemo). **Paginación**: `SONGS_PAGE_SIZE=40` + estado `visibleSongs`; Búsqueda/Ranking pintan 40 y el resto con "Ver más" (reset por filtro/orden/sección, no por refrescos). El menú **Amigos** muestra un **puntito** con el nº de solicitudes pendientes (sondeo 30s + sync al aceptar/rechazar). Al completar un torneo guarda victorias **y** resultado final; el cierre del torneo se persiste ANTES de guardar + un `finalizingTournamentRef` evita el doble-disparo que duplicaba victorias.
 - `auth-gate.tsx` — pantalla de bienvenida ("BACHATA") + login/registro/recuperar + barra de cuenta (muestra @usuario). Gestiona el gate de @usuario.
 - `username-gate.tsx` — "elige tu @usuario" (obligatorio si no tienes uno).
 - `reset-password.tsx` — poner contraseña nueva.
@@ -39,7 +39,7 @@ Registro técnico: arquitectura, mapa de archivos y estado. Complementa a [FUNCI
 ### Lógica/datos (`lib/`)
 - `supabase.ts` (cliente, `detectSessionInUrl` true para el reset), `auth-context.tsx` (sesión, perfil, `isOwner`, `signIn/up/out`, `resetPassword`, `updatePassword`, `setUsername`).
 - `db.ts` — `fetchSharedPlaylist`, `saveRatingToDb`, `deleteRatingFromDb`, `saveTournamentWins`, **`saveTournamentResult`** (insert idempotente, ignora 23505), `fetchRecentTournamentWins`, `syncPlaylistToDb`, `deleteSongFromDb`.
-- `friends.ts` — `findUserByUsername`, `sendFriendRequest`, `acceptFriendRequest`, `removeFriendship`, `fetchFriends`, **`fetchFriendRatings`** (top 10 de un amigo), **`fetchFriendTournaments`** (sus torneos de los últimos 7 días), **`fetchIncomingRequestCount`** (puntito de solicitudes).
+- `friends.ts` — `findUserByUsername`, `sendFriendRequest`, `acceptFriendRequest`, `removeFriendship`, `fetchFriends`, **`fetchFriendRatings`** (top 10 de un amigo), **`fetchFriendTournaments`** (torneos de un amigo de los últimos 7 días; reconstruye el podio agrupando `tournament_song_wins` por `tournament_id` y ordenando por victorias — NO usa `tournament_results`, así se ven TODOS los torneos), **`fetchIncomingRequestCount`** (puntito de solicitudes).
 - `spotify.ts` (OAuth, sync), `storage.ts` (localStorage: torneo + overlay), `tournament.ts` (estrategias por edad al azar), `types.ts`, `constants.ts`, `utils.ts` (incluye `parseRatingInput`/`sanitizeRatingInput` para 1 decimal, `formatReleaseDateFull`).
 
 ## Estado por bloques
@@ -58,6 +58,9 @@ Registro técnico: arquitectura, mapa de archivos y estado. Complementa a [FUNCI
 | Puntito de solicitudes de amistad pendientes | ✅ desplegado |
 | Reproductor Spotify coordinado (pausa los demás al darle play) | ✅ desplegado |
 | Fix victorias de torneo duplicadas (doble-disparo) | ✅ desplegado |
+| Torneos de amigos reconstruidos desde victorias (se ven todos) | ✅ desplegado |
+| Paginación de listas de canciones ("Ver más", 40 por tanda) | ✅ desplegado |
+| Tildes/ñ y copy de orientación (menú sin "Opción", textos claros) | ✅ desplegado |
 | Optimización de rendimiento (memo) | ✅ |
 
 ## Flujo de trabajo (git)
@@ -72,5 +75,6 @@ Registro técnico: arquitectura, mapa de archivos y estado. Complementa a [FUNCI
 ## Pendientes
 - **Privacidad dura (Opción B)** — solo si se abre a desconocidos.
 - **Candado en BD para victorias** (defensa extra): `unique(user_id, tournament_id, song_entry_id)` en `tournament_song_wins` + upsert. El doble-disparo ya está resuelto en el cliente; esto sería el cinturón definitivo.
-- Email fiable (Gmail SMTP) para reactivar la confirmación.
-- A futuro: trocear `playlist-arena-app.tsx`; paginar/virtualizar listas largas si hace falta.
+- Email fiable (Gmail SMTP) para reactivar la confirmación. (Por ahora el dueño aprueba cada cuenta a mano en Supabase; ~40 personas.)
+- A futuro: trocear `playlist-arena-app.tsx`; virtualizar las listas si la paginación de 40 se queda corta.
+- Auditoría externa (2026-06-26): pendientes opcionales NO hechos por decisión del dueño (app cerrada para ~40 amigos, no busca escalar): 404 con marca, favicon, OG tags, Sentry/analytics, toggle ver-contraseña. (Lo "crítico" de las auditorías era casi todo sobre crecimiento o estaba mal diagnosticado.)

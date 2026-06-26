@@ -33,6 +33,7 @@ Dos subapartados: **Búsqueda** y **Ranking**. (La detección de repetidas y la 
 - Filtros: estado de nota (todas / solo puntuadas / solo sin puntuar), nota mínima y nota máxima.
   - La nota mínima/máxima filtra según el contexto: por la **media de todos** si estás ordenando por ranking global, por **tu nota** en el resto (la etiqueta lo indica).
 - Desplegar cada canción para ver sus datos, tu nota, la media de la comunidad (con nº de votos) y abrir en Spotify.
+- **Paginación**: la lista muestra **40 canciones** y el resto se cargan con **"Ver más"** (no mete las ~740 de golpe; va fluido en móvil). Igual en Búsqueda y en Ranking.
 - **Añadir puntuación**: flujo que te muestra una canción **sin puntuar al azar** (no sigue ningún orden) y avanza a otra aleatoria al guardar.
 
 ### Ranking
@@ -62,7 +63,7 @@ Apartado para conectar con otra gente de la app:
 - **Solicitudes recibidas**: aceptar o rechazar. Un **puntito** en la tarjeta "Amigos" del menú avisa del nº de solicitudes pendientes (se refresca cada 30s y al instante al aceptar/rechazar).
 - **Solicitudes enviadas** y **lista de amigos**.
 - **Eliminar amigo** (con confirmación): deja de ser amigos; para volver a ver sus datos hay que mandar solicitud de nuevo.
-- **Ver perfil** de un amigo (Fase 2): su **top 10** de canciones (sus mejores notas) y sus **torneos de esta semana** con el podio (campeón + top 3).
+- **Ver perfil** de un amigo (Fase 2): su **top 10** de canciones (sus mejores notas) y sus **torneos de los últimos 7 días** con el podio. Los torneos se reconstruyen desde las **victorias** (`tournament_song_wins`, que se guardan siempre), así se ven **todos** (también los anteriores a esta función). Cada uno muestra "Torneo" + fecha + podio (🥇🥈🥉).
 - **Privacidad (Opción A "blanda")**: la **media del ranking sigue siendo de todos** (amigos y no amigos), igual que siempre. Lo "entre amigos" es poder ver el **detalle** (notas y torneos) de tus amigos aceptados; la app solo muestra ese detalle de amigos. (Un blindaje "duro" a nivel de base de datos queda pendiente para el futuro, si se abre la app a desconocidos.)
 
 ## Preview de Spotify

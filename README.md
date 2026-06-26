@@ -24,9 +24,9 @@ Aplicación web **multiusuario** para puntuar y comparar las canciones de **una 
 
 Al entrar (tras la bienvenida + login + @usuario) hay cinco apartados:
 
-1. **Canciones** — Búsqueda y Ranking (+ Novedades arriba: 10 lanzamientos más recientes).
+1. **Canciones** — Búsqueda y Ranking (+ Novedades arriba: 10 lanzamientos más recientes). Las listas largas se cargan paginadas (40 + "Ver más").
 2. **Artistas** — media y ranking por artista.
-3. **Torneo** — montar y jugar brackets.
+3. **Torneo** — montar y jugar torneos (duelos de canciones; la ganadora sube en el ranking).
 4. **Amigos** — añadir por @usuario, solicitudes (con aviso/puntito), lista de amigos y "Ver perfil" (top 10 + torneos de la semana).
 5. **Estado de la playlist** — solo lectura; para el **dueño** es "Administrar playlist" (sincronizar desde Spotify, duplicadas, última actualización).
 
@@ -42,8 +42,8 @@ Al entrar (tras la bienvenida + login + @usuario) hay cinco apartados:
 | Perfiles (nombre, @usuario, is_owner) | Supabase (`profiles`) | @usuario único por persona |
 | Canciones de la playlist | Supabase (`songs`) | Sí (una copia para todos) |
 | Notas por persona | Supabase (`ratings`) | Sí: la **media es de todos**. El detalle (qué puso cada uno) se ve de tus **amigos** en su perfil. (Blindaje "duro" = futuro.) |
-| Victorias de torneo | Supabase (`tournament_song_wins`) | Sí (suma global para el desempate + top semanal) |
-| Resultado final de cada torneo | Supabase (`tournament_results`) | Visible para ti y tus **amigos** (top 10 + torneos de la semana) |
+| Victorias de torneo | Supabase (`tournament_song_wins`) | Sí: suma global para el desempate + top semanal, **y** de aquí se reconstruyen los torneos de tus amigos (su podio) |
+| Resultado final de cada torneo | Supabase (`tournament_results`) | Se guarda, pero la vista de amigos ya no lo usa (se reconstruye desde las victorias). Reserva/futuro |
 | Amistades | Supabase (`friendships`) | Solo las tuyas (RLS) |
 | Torneo en curso / historial completo | `localStorage` del navegador | No (por persona); solo el **resultado final** sube a la BD |
 
